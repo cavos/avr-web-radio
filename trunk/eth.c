@@ -39,7 +39,7 @@ void	ethService()
 	{
 		if (eth->type == HTONS(ETH_TYPE_IP))
 		{
-			if(settings.ipaddr.b32 == ip->targetIP.b32 || ip->targetIP.b32 == IP_BROADCAST)
+			if((settings.ipaddr.b32 == HTONS32(ip->targetIP.b32)) || (HTONS32(ip->targetIP.b32) == IP_BROADCAST))
 			{
 				arpAddEntry();
 				if (ip->protocol == IP_PR_ICMP)
@@ -70,14 +70,14 @@ void	ethGetData()
 	}
 }
 
-void	ethMakeHeader(ipAddr *targetIp)
+void	ethMakeHeader(ipAddr targetIp)
 {
 	UINT8 j;
 	
 	// check routing
-	if( (targetIp->b32 & settings.netmask.b32) != (settings.ipaddr.b32 & settings.netmask.b32))
+	if( (targetIp.b32 & settings.netmask.b32) != (settings.ipaddr.b32 & settings.netmask.b32))
 	{
-		targetIp->b32 = settings.gateway.b32;
+		targetIp.b32 = settings.gateway.b32;
 	}
 	
 	// search for MAC addr in ARP table
@@ -104,7 +104,7 @@ void	ethInit()
 	//ethArp();
 	while(1)
 	{
-		UINT8 j = arpEntrySearch(&settings.gateway);
+		UINT8 j = arpEntrySearch(settings.gateway);
 		
 		if (j != MAX_ARP_ENTRY)
 		{
@@ -113,7 +113,7 @@ void	ethInit()
 		}
 		else
 		{
-			arpRequest(&settings.gateway);
+			arpRequest(settings.gateway);
 			_delay_ms(500);
 			wdt_reset();
 		}
@@ -121,7 +121,7 @@ void	ethInit()
 		UINT16	length = enc28j60_receivePacket(MTU_SIZE,packetBuffer);
 		if(length > 0)
 		{
-			if (eth->type == ETH_TYPE_ARP)
+			if (eth->type == HTONS(ETH_TYPE_ARP))
 			{
 				arpReply();
 			}
@@ -133,16 +133,25 @@ UINT16	ipChecksum()
 {
 	UINT32	sum32 = 0;
 	UINT16	result16 = 0;
+	UINT16	tmp = (ip->ver_len)<<8;
 	
-	sum32 = ip->ver_len + ip->tos;	// firsts 16b
-	sum32 = sum32 + ip->length;		// second 16b
-	sum32 = sum32 + ip->id;					 
-	sum32 = sum32 + ip->flags_offset;
-	sum32 = sum32 + ip->ttl + ip->protocol;
-	sum32 = sum32 + ip->sourceIP.b32;
-	sum32 = sum32 + ip->targetIP.b32;
-	sum32 = (sum32&0x0000FFFF) + (sum32&0xFFFF0000>>16); // might carry
-	result16 = ((sum32&0x0000FFFF) + (sum32&0xFFFF0000>>16))&0xFFFF; // add carry
+	sum32 = sum32 + tmp + ip->tos;
+	sum32 = sum32 + HTONS(ip->length);
+	sum32 = sum32 + HTONS(ip->flags_offset);
+	tmp = (ip->ttl)<<8;
+	sum32 = sum32 + tmp + ip->protocol;
+	sum32 = sum32 + ((HTONS32(ip->sourceIP.b32))>>16); // msb
+	sum32 = sum32 + ((HTONS32(ip->sourceIP.b32))&0x0000FFFF); //lsb
+	sum32 = sum32 + ((HTONS32(ip->targetIP.b32))>>16); // msb
+	sum32 = sum32 + ((HTONS32(ip->targetIP.b32))&0x0000FFFF); // lsb
+	
+	tmp = (sum32&0xFFFF0000)>>16;
+	sum32 = sum32 + tmp;
+	//sum32 = (sum32&0x0000FFFF) + ((sum32&0xFFFF0000)>>16); // might carry
+	//result16 = ((sum32&0x0000FFFF) + ((sum32&0xFFFF0000)>>16))&0xFFFF; // add carry
+
+	result16 = sum32&0x0000FFFF;
+	result16 = ~result16;
 	
 	return result16;
 }

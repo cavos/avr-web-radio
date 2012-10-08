@@ -19,7 +19,7 @@
 #define B7	0x80
 
 typedef unsigned char		UINT8;
-typedef unsigned short int	UINT16;
+typedef unsigned int		UINT16;
 typedef	unsigned long		UINT32;
 
 #endif /* TYPES_H_ */
