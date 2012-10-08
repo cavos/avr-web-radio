@@ -21,7 +21,7 @@ ICMP_HEADER	*icmp = (ICMP_HEADER*)&packetBuffer[ICMP_OFFSET];
 IP_HEADER	*ip	= (IP_HEADER*)&packetBuffer[IP_OFFSET];
 
 
-void	ipMakeHeader(ipAddr *targetIp)
+void	ipMakeHeader(ipAddr targetIp)
 {
 	ethMakeHeader(targetIp);
 	eth->type = HTONS(ETH_TYPE_IP);
@@ -32,10 +32,10 @@ void	ipMakeHeader(ipAddr *targetIp)
 	ip->flags_offset = HTONS(0x4000); // do not fragment
 	ip->ttl = 128;
 	ip->checksum = 0;
-	ip->targetIP.b32 = targetIp->b32;
-	ip->sourceIP.b32 = settings.ipaddr.b32;
+	ip->targetIP.b32 = HTONS32(targetIp.b32);
+	ip->sourceIP.b32 = HTONS32(settings.ipaddr.b32);
 	
-	ip->checksum = ipChecksum();
+	ip->checksum = HTONS(ipChecksum());
 }
 
 void	arpTimeService()
@@ -61,17 +61,17 @@ void	arpAddEntry()
 	{
 		if(eth->type == HTONS(ETH_TYPE_IP))
 		{
-			if (arpTable[i].ip.b32 == ip->sourceIP.b32)
+			if(arpTable[i].ip.b32 == HTONS32(ip->sourceIP.b32))
 			{
-				if (arpTable[i].arpTime != ARP_TIMEOFF)
+				if(arpTable[i].arpTime != ARP_TIMEOFF)
 				{
 					arpTable[i].arpTime = ARP_TIMEMAX;
 				}
 			}
 		}
-		if (eth->type == HTONS(ETH_TYPE_ARP))
+		if(eth->type == HTONS(ETH_TYPE_ARP))
 		{
-			if (arpTable[i].ip.b32 == arp->sourceIP.b32)
+			if(arpTable[i].ip.b32 == HTONS32(arp->sourceIP.b32))
 			{
 				if (arpTable[i].arpTime != ARP_TIMEOFF)
 				{
@@ -90,7 +90,7 @@ void	arpAddEntry()
 			{
 				for(UINT8 y = 0; y < 6; y++)
 					{arpTable[i].mac.b8[y] = eth->srcMac.b8[y];}
-				arpTable[i].ip.b32 = ip->sourceIP.b32;
+				arpTable[i].ip.b32 = HTONS32(ip->sourceIP.b32);
 				arpTable[i].arpTime = ARP_TIMEMAX;
 				return;
 			}
@@ -100,7 +100,7 @@ void	arpAddEntry()
 				{
 					arpTable[i].mac.b8[y] = arp->sourceMac.b8[y];
 				}
-				arpTable[i].ip.b32 = arp->sourceIP.b32;
+				arpTable[i].ip.b32 = HTONS32(arp->sourceIP.b32);
 				arpTable[i].arpTime = ARP_TIMEMAX;
 			}
 		}
@@ -108,18 +108,18 @@ void	arpAddEntry()
 	
 }
 
-UINT8	arpEntrySearch(ipAddr *ipaddr)
+UINT8	arpEntrySearch(ipAddr ipaddr)
 {
 	// check routing
-	if( (ipaddr->b32 & settings.netmask.b32) != (settings.gateway.b32 & settings.netmask.b32))
+	if( (ipaddr.b32 & settings.netmask.b32) != (settings.gateway.b32 & settings.netmask.b32))
 	{
-		ipaddr->b32 = settings.gateway.b32; // use router
+		ipaddr.b32 = settings.gateway.b32; // use router
 	}
 	
 	// look for mac in arp table
 	for(UINT8 i = 0; i < MAX_ARP_ENTRY; i++)
 	{
-		if( ipaddr->b32 == arpTable[i].ip.b32)
+		if( ipaddr.b32 == arpTable[i].ip.b32)
 		{
 			return i;
 		}
@@ -129,12 +129,12 @@ UINT8	arpEntrySearch(ipAddr *ipaddr)
 
 void	arpReply()
 {
-	if( (arp->hwType == HTONS(ETH_HW_ETH)) &&
-		(arp->prType == ETH_TYPE_IP) &&
-		(HTONS32(arp->targetIP.b32) == settings.ipaddr.b32))
+	if((arp->hwType == HTONS(ETH_HW_ETH)) && (arp->prType == HTONS(ETH_TYPE_IP)) && (HTONS32(arp->targetIP.b32) == settings.ipaddr.b32))
 		{
-			if( arp->opCode == ARP_REQUEST)
+			LED_ON();
+			if(arp->opCode == ARP_REQUEST)
 			{
+				
 				for (UINT8 i = 0; i < 6; i++)
 				{
 					eth->dstMac.b8[i] = eth->srcMac.b8[i];
@@ -145,33 +145,34 @@ void	arpReply()
 				// set opcode
 				arp->opCode = ARP_REPLY;
 				arp->targetIP.b32 = arp->sourceIP.b32;
-				arp->sourceIP.b32 = settings.ipaddr.b32;
+				arp->sourceIP.b32 = HTONS32(settings.ipaddr.b32);
 				
 				enc28j60_sendPacket(ARP_REPLY_LEN, packetBuffer, 0,0);
 			}
-			else if (arp->opCode == ARP_REPLY)
+			else if(arp->opCode == ARP_REPLY)
 			{
-				LED_ON();
+				//LED_ON();
 				arpAddEntry();
 			}
+			
 		}
 }
 
-UINT8	arpRequest(ipAddr *ipaddr)
+UINT8	arpRequest(ipAddr ipaddr)
 {
 	ipAddr dstIPcpy;
-	dstIPcpy.b32 = ipaddr->b32;
+	dstIPcpy.b32 = ipaddr.b32;
 	
 	// check routing
-	if( (ipaddr->b32 & settings.netmask.b32) != (settings.ipaddr.b32 && settings.netmask.b32))
+	if( (ipaddr.b32 & settings.netmask.b32) != (settings.ipaddr.b32 && settings.netmask.b32))
 	{
-		ipaddr->b32 = settings.gateway.b32;
+		ipaddr.b32 = settings.gateway.b32;
 	}
 	
-	eth->type = ETH_TYPE_ARP;
+	eth->type = HTONS(ETH_TYPE_ARP);
 	ethMakeHeader(ipaddr);
 	arp->sourceIP.b32 = HTONS32(settings.ipaddr.b32);
-	arp->targetIP.b32 = HTONS32(ipaddr->b32);
+	arp->targetIP.b32 = HTONS32(ipaddr.b32);
 	
 	for(UINT8 i = 0; i < 6; i++)
 	{
@@ -179,7 +180,7 @@ UINT8	arpRequest(ipAddr *ipaddr)
 		arp->targetMac.b8[i] = 0x00;
 	}
 	arp->hwType = HTONS(ETH_HW_ETH);
-	arp->prType = ETH_TYPE_IP;
+	arp->prType = HTONS(ETH_TYPE_IP);
 	arp->hwLength = 6;
 	arp->prLength = 4;
 	arp->opCode = ARP_REQUEST;
@@ -204,17 +205,26 @@ UINT8	arpRequest(ipAddr *ipaddr)
 
 void	icmpService(/*ipAddr dstIp, UINT8 type*/)
 {
-	UINT16 chk = 0;
-	
+	UINT32 tmp;
 	if(icmp->type == ICMP_TYPE_ECHO_REQ)
 	{
-		ip->length = ICMP_REPLY_LEN;
+		
+		
+		LED_ON();
+		ip->length = HTONS(ICMP_REPLY_LEN);
 		ip->protocol = IP_PR_ICMP;
-		ipMakeHeader(&ip->sourceIP); // error probability with copying ip addr!
+		ip->sourceIP.b32 = HTONS32(ip->sourceIP.b32);
+		ipMakeHeader(ip->sourceIP); // error probability with copying ip addr!
 		// TODO: checksum!!!
 		icmp->type = 0;
 		icmp->code = 0;
-		icmp->checksum = icmp->checksum + 0x0800; // only the type is changed 
+		tmp = HTONS(icmp->checksum); // only the type is changed 
+		tmp = tmp + 0x0800; // so add 8
+		icmp->checksum = (tmp&0xFFFF0000)>>16;
+		icmp->checksum = tmp + icmp->checksum;
+		icmp->checksum = HTONS(icmp->checksum);
+		
+		enc28j60_sendPacket(ICMP_REPLY_LEN, packetBuffer, 0,0);
 	}
 
 }

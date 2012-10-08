@@ -71,8 +71,8 @@ typedef	struct
 // ETHERTNET -------------------------------------------------
 #define ETH_OFFSET		0x00
 #define ETH_HEADER_SIZE	14
-#define	ETH_TYPE_IP		HTONS(0x0800)
-#define ETH_TYPE_ARP	HTONS(0x0806)
+#define	ETH_TYPE_IP		0x0800
+#define ETH_TYPE_ARP	0x0806
 
 typedef	struct  
 {
@@ -192,13 +192,17 @@ extern	ARPtable	arpTable[MAX_ARP_ENTRY];
 extern	UINT8		packetBuffer[MTU_SIZE+1];
 
 
+// user must program it!
+//extern void nicSend(sd);
+
+
 // prototypes ----------------------------------------------------
 extern	void	ethInit();
 //extern	void	ethArp();
 extern	void	ethGetData();
 
-extern	UINT8	arpEntrySearch(ipAddr *ipaddr);
-extern	UINT8	arpRequest(ipAddr *ipaddr);
+extern	UINT8	arpEntrySearch(ipAddr ipaddr);
+extern	UINT8	arpRequest(ipAddr ipaddr);
 
 extern	void	icmpService();
 
@@ -209,8 +213,8 @@ extern	void	icmpService();
 //extern	void	tcpSend(UINT16 len);
 //extern	void	tcpAppChangePort(UINT16 old, UINT16 new);
 
-extern	void	ethMakeHeader(ipAddr *targetIp);
-extern	void	ipMakeHeader(ipAddr	*targetIp);
+extern	void	ethMakeHeader(ipAddr targetIp);
+extern	void	ipMakeHeader(ipAddr	targetIp);
 
 extern	UINT16	ipChecksum(); //proper computation?
 
