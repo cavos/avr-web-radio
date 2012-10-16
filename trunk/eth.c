@@ -129,6 +129,12 @@ void	ethInit()
 	}
 }
 
+void	ethTimeService()
+{
+	arpTimeService();
+	
+}
+
 UINT16	ipChecksum()
 {
 	UINT32	sum32 = 0;

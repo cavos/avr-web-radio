@@ -8,6 +8,8 @@
 #define APPNAME		"AVRWebRadio"
 #define APPVER		"0.1.0"
 
+#define STATION_PORT	1000
+
 /* ENC28J60 */
 #define	ENC28J60_DISABLE()	PORTB |= B3
 #define ENC28J60_ENABLE()	PORTB &= ~B3
