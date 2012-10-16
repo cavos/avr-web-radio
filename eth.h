@@ -35,6 +35,7 @@ typedef	union
 typedef	union
 {
 	UINT8	b8[4];
+	UINT16	b16[2];
 	UINT32	b32;
 } ipAddr;
 
@@ -58,7 +59,7 @@ typedef	struct
 	UINT8	status;
 	UINT8	time;
 	UINT8	error;
-	UINT8	firstAck:1;
+	void	(*appCall)(void);
 } TCPtable;
 
 typedef	struct
@@ -157,7 +158,7 @@ typedef struct
 typedef struct
 {
 	UINT16	srcPort;		//source port
-	UINT16	dstPortl;		//destination port
+	UINT16	dstPort;		//destination port
 	UINT32	seqNum;			//sequence number
 	UINT32	ackNum;			//acknowledgement number
 	UINT8	length;			//length
@@ -168,14 +169,12 @@ typedef struct
 }TCP_HEADER;
 
 #define TCP_WINDOW		(MTU_SIZE-100)
-#define TCP_S_CONNECTED	1
-#define TCP_S_ACKED		2
-#define	TCP_S_NEWDATA	3
-#define TCP_S_REXMIT	4
-#define TCP_S_POOL		5
-#define TCP_S_CLOSED	6
-#define TCP_S_ABORTED	7
-#define TCP_S_TIMEDOUT	8
+#define TCP_S_CLOSED	0
+#define	TCP_S_OPENED	1
+#define	TCP_S_OPEN		2
+#define TCP_S_ABORT		3
+#define TCP_S_CLOSE		4
+#define	TCP_S_FINISH	5
 
 
 // struct pointers ------------------------------------------
@@ -186,8 +185,8 @@ extern	ICMP_HEADER	*icmp;
 extern	TCP_HEADER	*tcp;
 
 extern	device		settings;
-//extern	TCPtable	tcpTable[MAX_TCP_ENTRY+1];
-//extern	TCPtable	*tcpConn;
+extern	TCPtable	tcpTable[MAX_TCP_ENTRY+1];
+extern	TCPtable	*tcpConn;
 extern	ARPtable	arpTable[MAX_ARP_ENTRY];
 extern	UINT8		packetBuffer[MTU_SIZE+1];
 
@@ -200,23 +199,27 @@ extern	UINT8		packetBuffer[MTU_SIZE+1];
 extern	void	ethInit();
 //extern	void	ethArp();
 extern	void	ethGetData();
+extern	void	ethTimeService();
 
 extern	UINT8	arpEntrySearch(ipAddr ipaddr);
 extern	UINT8	arpRequest(ipAddr ipaddr);
 
 extern	void	icmpService();
 
-//extern	void	tcpMakePacket(UINT16 len);
-//extern	void	tcpConnectTo(ipAddr targetIp, UINT16 targetPort);
-//extern	void	tcpListenTo(UINT16 listenPort);
-//extern	void	tcpDeleteConn();
-//extern	void	tcpSend(UINT16 len);
-//extern	void	tcpAppChangePort(UINT16 old, UINT16 new);
+extern	void	tcpService();
+extern	void	tcpTimeService();
+extern	UINT8	tcpConnect(ipAddr targetIp, UINT16 dstPort, UINT16 srcPort); // if success, returns tcpTable entry number of connection else MAX_TCP_ENTRY
+extern	UINT8	tcpListen(UINT16 port); // if success, returns tcpTable entry number of connection else MAX_TCP_ENTRY
+extern	void	tcpClose(UINT8 index);
+extern	void	tcpAbort(UINT8 index);
+extern	void	tcpSend(UINT8 index, UINT16 len);
 
 extern	void	ethMakeHeader(ipAddr targetIp);
 extern	void	ipMakeHeader(ipAddr	targetIp);
+extern	void	tcpMakeHeader(UINT8 index, UINT16 len);
 
 extern	UINT16	ipChecksum(); //proper computation?
+extern	void	tcpChecksum(UINT8 *data, UINT16 len, ipAddr dstIp);
 
 extern	UINT16	htons(const UINT16 val);
 extern	UINT32	htons32(const UINT32 val);
@@ -226,8 +229,11 @@ extern	void	ethService();
 extern	void	arpAddEntry();
 extern	void	arpReply();
 extern	void	arpTimeService();
-//extern	void	tcpTimeService();
-//extern	void	tcpService();
-//extern	UINT8	tcpSearchPort(UINT16 p);
+
+extern	void	tcpSClose(UINT8 index);
+extern	void	tcpSOpen(UINT8 index);
+extern	void	tcpSOpened(UINT8 index);
+extern	void	tcpSAbort(UINT8 index);
+extern	void	tcpSFinish(UINT8 index);
 
 #endif /* ETH_H_ */
