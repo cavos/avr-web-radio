@@ -12,7 +12,7 @@
 #include "types.h"
 
 #define HTONS(x)	(((x)&0x00FF)<<8)+(((x)&0xFF00)>>8)
-#define HTONS32(x)	(((x)&0xFF000000)>>24)|(((x)&0x00FF0000)>>8)|(((x)&0x0000FF00)<<8)|(((x)&0x000000FF)<<24)
+#define HTONS32(x)	((((x)&0xFF000000)>>24)|(((x)&0x00FF0000)>>8)|(((x)&0x0000FF00)<<8)|(((x)&0x000000FF)<<24))
 
 #define IP_BROADCAST		0xFFFFFFFF
 
@@ -59,7 +59,7 @@ typedef	struct
 	UINT8	status;
 	UINT8	time;
 	UINT8	error;
-	void	(*appCall)(void);
+	UINT16	(*appCall)(void);
 } TCPtable;
 
 typedef	struct
@@ -185,7 +185,7 @@ extern	ICMP_HEADER	*icmp;
 extern	TCP_HEADER	*tcp;
 
 extern	device		settings;
-extern	TCPtable	tcpTable[MAX_TCP_ENTRY+1];
+extern	TCPtable	tcpTable[MAX_TCP_ENTRY];
 extern	TCPtable	*tcpConn;
 extern	ARPtable	arpTable[MAX_ARP_ENTRY];
 extern	UINT8		packetBuffer[MTU_SIZE+1];
@@ -198,7 +198,7 @@ extern	UINT8		packetBuffer[MTU_SIZE+1];
 // prototypes ----------------------------------------------------
 extern	void	ethInit();
 //extern	void	ethArp();
-extern	void	ethGetData();
+extern	void	ethService();
 extern	void	ethTimeService();
 
 extern	UINT8	arpEntrySearch(ipAddr ipaddr);
@@ -219,13 +219,13 @@ extern	void	ipMakeHeader(ipAddr	targetIp);
 extern	void	tcpMakeHeader(UINT8 index, UINT16 len);
 
 extern	UINT16	ipChecksum(); //proper computation?
-extern	void	tcpChecksum(UINT8 *data, UINT16 len, ipAddr dstIp);
+extern	UINT16	tcpChecksum(UINT8 *data, UINT16 len, ipAddr dstIp);
 
 extern	UINT16	htons(const UINT16 val);
 extern	UINT32	htons32(const UINT32 val);
 
 //-------------------------------------
-extern	void	ethService();
+//extern	void	ethService();
 extern	void	arpAddEntry();
 extern	void	arpReply();
 extern	void	arpTimeService();

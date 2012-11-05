@@ -13,6 +13,7 @@
 #include "enc28j60.h"
 //#include "checksum.h"
 #include "eth.h"
+#include "fifo.h"
 
 TCP_HEADER	*tcp = (TCP_HEADER*)&packetBuffer[TCP_OFFSET];
 TCPtable	tcpTable[MAX_TCP_ENTRY];
@@ -30,9 +31,9 @@ void	tcpAbort(UINT8 index)
 
 UINT8	tcpConnect(ipAddr targetIp, UINT16 dstPort, UINT16 srcPort)
 {
-	UINT8	i = 0;
+	UINT8	i;
 	
-	for (i; i < MAX_TCP_ENTRY; i++)	// find free tcpTable entry
+	for (i=0; i < MAX_TCP_ENTRY; i++)	// find free tcpTable entry
 	{
 		if( tcpTable[i].status == TCP_S_CLOSED )
 		{
@@ -45,14 +46,14 @@ UINT8	tcpConnect(ipAddr targetIp, UINT16 dstPort, UINT16 srcPort)
 		return MAX_TCP_ENTRY;
 	}
 	
-	macAddr mac = arpRequest(targetIp);
+	UINT8 j = arpRequest(targetIp);
 	
-	tcpTable[i].mac.b8[0] = mac.b8[0];
-	tcpTable[i].mac.b8[1] = mac.b8[1];
-	tcpTable[i].mac.b8[2] = mac.b8[2];
-	tcpTable[i].mac.b8[3] = mac.b8[3];
-	tcpTable[i].mac.b8[4] = mac.b8[4];
-	tcpTable[i].mac.b8[5] = mac.b8[5];
+	tcpTable[i].mac.b8[0] = arpTable[j].mac.b8[0];
+	tcpTable[i].mac.b8[1] = arpTable[j].mac.b8[1];
+	tcpTable[i].mac.b8[2] = arpTable[j].mac.b8[2];
+	tcpTable[i].mac.b8[3] = arpTable[j].mac.b8[3];
+	tcpTable[i].mac.b8[4] = arpTable[j].mac.b8[4];
+	tcpTable[i].mac.b8[5] = arpTable[j].mac.b8[5];
 	tcpTable[i].ip.b32 = targetIp.b32;
 	tcpTable[i].port = dstPort;
 	tcpTable[i].localPort = srcPort;
@@ -65,7 +66,7 @@ UINT8	tcpConnect(ipAddr targetIp, UINT16 dstPort, UINT16 srcPort)
 	
 	tcpSend(i, 0);
 	
-	return;
+	return j;
 }
 
 void	tcpSend(UINT8 index, UINT16 len)
@@ -74,17 +75,17 @@ void	tcpSend(UINT8 index, UINT16 len)
 	
 	enc28j60_sendPacket(ETH_HEADER_SIZE + IP_HEADER_SIZE + TCP_HEADER_SIZE + len, packetBuffer, 0,0);
 	
-	tcpTable[i].seqnum += len;
+	tcpTable[index].seqnum += len;
 }
 
 void	tcpService()
 {
-	UINT8 i = 0;
-	UINT16 len = 0;
+	UINT8 i;
+	//UINT16 len = 0;
 	
-	for (i; i < MAX_TCP_ENTRY; i++)
+	for (i = 0; i < MAX_TCP_ENTRY; i++)
 	{
-		if( HTONS(tcp->dstPort) == tcpTable[i].localPortport && HTONS(tcp->srcPort) == tcpTable[i].port)
+		if( HTONS(tcp->dstPort) == tcpTable[i].localPort && HTONS(tcp->srcPort) == tcpTable[i].port)
 		{
 			break;
 		}
@@ -140,7 +141,7 @@ void	tcpSFinish(UINT8 index) // waitig for ACK|FIN, send ACK
 		tcpTable[index].flags = TCP_FLAG_ACK;
 		
 		tcpSend(index,0);
-		TCPtable[index].status = TCP_S_CLOSED;
+		tcpTable[index].status = TCP_S_CLOSED;
 	}
 }
 
@@ -152,7 +153,7 @@ void	tcpSOpen(UINT8 index) // syn & ack
 	} 
 	else if ( (tcp->flags&TCP_FLAG_SYN) && (tcp->flags&TCP_FLAG_ACK))
 	{
-		UINT8 len;
+		UINT16 len;
 		
 		tcpTable[index].acknum = HTONS32(tcp->seqNum) + 1;
 		tcpTable[index].seqnum = HTONS32(tcp->ackNum);
@@ -170,7 +171,7 @@ void	tcpSOpen(UINT8 index) // syn & ack
 	}
 	else
 	{
-		tcpTable[index].acknum = HTONS32(tcp->seqNum) + HTONS(ip->length) - (IP_HEADER_SIZE+tcp->length>>2);
+		tcpTable[index].acknum = HTONS32(tcp->seqNum) + HTONS(ip->length) - (IP_HEADER_SIZE+(tcp->length>>2));
 		tcpTable[index].flags = TCP_FLAG_RST;
 		tcpTable[index].status = TCP_S_CLOSED;
 		tcpSend(index,0);
@@ -208,11 +209,20 @@ void	tcpSOpened(UINT8 index) //
 	}
 }
 
-void	tcpListen(UINT16 port)
+void	tcpSAbort(UINT8 index)
 {
-	UINT8 i = 0;
+	tcpTable[index].acknum = HTONS32(tcp->seqNum) + (HTONS(ip->length)) - (IP_HEADER_SIZE + (tcp->length>>2));
+	tcpTable[index].flags = TCP_FLAG_RST;
+	tcpTable[index].status = TCP_S_CLOSED;
 	
-	for (i; i < MAX_TCP_ENTRY; i++) // look for free table index
+	tcpSend(index, 0);
+}
+
+UINT8	tcpListen(UINT16 port)
+{
+	UINT8 i;
+	
+	for (i=0; i < MAX_TCP_ENTRY; i++) // look for free table index
 	{
 		if(tcpTable[i].status == TCP_S_CLOSED)
 		{
@@ -264,6 +274,7 @@ void	tcpListen(UINT16 port)
 			tcpTable[i].error = 0;
 			
 			tcpSend(i,0);
+			return MAX_TCP_ENTRY;
 		}
 		else
 		{
@@ -284,8 +295,12 @@ void	tcpListen(UINT16 port)
 			tcpTable[i].error = 0;
 			
 			tcpSend(i,0);
+			
+			return MAX_TCP_ENTRY;
 		}
 	}
+	
+	return MAX_TCP_ENTRY;
 }
 
 UINT16	tcpChecksum(UINT8 *data, UINT16 len, ipAddr dstIp)
@@ -293,8 +308,8 @@ UINT16	tcpChecksum(UINT8 *data, UINT16 len, ipAddr dstIp)
 	UINT32 sum = 0;
 	
 	// pseudo header
-	sum = sum + device.ipaddr.b16[0];
-	sum = sum + device.ipaddr.b16[1];
+	sum = sum + settings.ipaddr.b16[0];
+	sum = sum + settings.ipaddr.b16[1];
 	sum = sum + dstIp.b16[0];
 	sum = sum + dstIp.b16[1];
 	sum = sum + HTONS(len);
@@ -302,13 +317,13 @@ UINT16	tcpChecksum(UINT8 *data, UINT16 len, ipAddr dstIp)
 	
 	for (; len > 1; len -= 2)
 	{
-		sum = sum + *((UINT16*)s);
-		s += 2; // move pointer
+		sum = sum + *((UINT16*)data);
+		data += 2; // move pointer
 	}
 	
 	if(len) // left-over byte
 	{
-		sum = sum + *(UINT*)s;
+		sum = sum + *(UINT8*)data;
 	}
 	
 	while(sum>>16)
@@ -356,4 +371,31 @@ void	tcpMakeHeader(UINT8 index, UINT16 len)
 	tcp->urgentPtr = 0;
 	
 	tcp->checksum = tcpChecksum((UINT8*)tcp, TCP_HEADER_SIZE+len, tcpTable[index].ip);
+}
+
+void	tcpTimeService()
+{
+	UINT8 i;
+	
+	for (i = 0; i < MAX_TCP_ENTRY; i++)
+	{
+		if(tcpTable[i].status == TCP_S_CLOSED)
+		{
+			continue;
+		}
+		else if (++tcpTable[i].time > TCP_TIMEOUT)
+		{
+			if (++tcpTable[i].error > TCP_MAXERROR)
+			{
+				tcpTable[i].flags = TCP_FLAG_RST;
+				tcpTable[i].status = TCP_S_CLOSED;
+				tcpSend(i,0);
+			}
+			else
+			{
+				tcpTable[i].time = TCP_TIMEOUT;
+				tcpSend(i, 0);
+			}
+		}
+	}
 }

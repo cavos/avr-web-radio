@@ -30,6 +30,13 @@ UINT16	htons(const UINT16 val)
 
 void	ethService()
 {
+	UINT16 length;
+	
+	length = enc28j60_receivePacket(MTU_SIZE, packetBuffer);
+	if (length < 0)
+	{
+		return;
+	}
 	// check packet type
 	if (eth->type == HTONS(ETH_TYPE_ARP))
 	{
@@ -48,7 +55,7 @@ void	ethService()
 				}
 				else if (ip->protocol == IP_PR_TCP)
 				{
-					//tcpService();
+					tcpService();
 				}
 				else if (ip->protocol == IP_PR_UDP)
 				{
@@ -59,16 +66,16 @@ void	ethService()
 	}
 }
 
-void	ethGetData()
-{
-	UINT16 length;
-	
-	length = enc28j60_receivePacket(MTU_SIZE, packetBuffer);
-	if (length > 0)
-	{
-		ethService();
-	}
-}
+//void	ethService()
+//{
+	//UINT16 length;
+	//
+	//length = enc28j60_receivePacket(MTU_SIZE, packetBuffer);
+	//if (length > 0)
+	//{
+		//ethService();
+	//}
+//}
 
 void	ethMakeHeader(ipAddr targetIp)
 {
@@ -81,7 +88,7 @@ void	ethMakeHeader(ipAddr targetIp)
 	}
 	
 	// search for MAC addr in ARP table
-	j = arpEntrySearch(targetIp);
+	j = arpRequest(targetIp);
 	
 	if (j != MAX_ARP_ENTRY)
 	{
@@ -104,6 +111,7 @@ void	ethInit()
 	//ethArp();
 	while(1)
 	{
+		
 		UINT8 j = arpEntrySearch(settings.gateway);
 		
 		if (j != MAX_ARP_ENTRY)
@@ -121,6 +129,7 @@ void	ethInit()
 		UINT16	length = enc28j60_receivePacket(MTU_SIZE,packetBuffer);
 		if(length > 0)
 		{
+			//LED_ON();
 			if (eth->type == HTONS(ETH_TYPE_ARP))
 			{
 				arpReply();
@@ -132,6 +141,7 @@ void	ethInit()
 void	ethTimeService()
 {
 	arpTimeService();
+	tcpTimeService();
 	
 }
 

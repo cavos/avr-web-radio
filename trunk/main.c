@@ -43,6 +43,7 @@ int main(void)
 	//UINT8 a2[1000];
 	//UINT16 ba = 0xC0F0;
 	
+	UINT8 rev;
 	
 	/* ports */
 	PORTA	= B0 | B1 | B2 | B3 | B4 | B5 | B6 | B7;
@@ -86,12 +87,23 @@ int main(void)
 	
 	fifo_init();
 	
-	//enc28j60_sendPacket(67, a1, 0, 0);
+	enc28j60_sendPacket(67, a1, 0, 0);
 	//enc28j60_sendPacket(64, a1);
-	PORTA = enc28j60_getRevision();
+	rev = enc28j60_getRevision();
+	PORTA = rev;
+	
+	//if (rev == 0x06)
+	//{
+		//LED_ON();
+	//}
+	while(enc28j60_receivePacket(67,a1))
+	{
+		LED_ON();
+	}
+	LED_OFF();
 	
 	ethInit();
-	LED_OFF();
+	//LED_ON();
 	sei();
 	
 /************************************************************************/
@@ -101,13 +113,13 @@ int main(void)
     {
         wdt_reset();
 		
-		ethGetData();
+		ethService();
 				
 		if( run_timeservice )
 		{
-			//eth_timeService();
+			//ethTimeService();
 			run_timeservice = 0x00;
-			//LED_TOGGLE();
+			LED_TOGGLE();
 		}		
 		else if( !BUTTON_1 )
 		{

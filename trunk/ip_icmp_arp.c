@@ -116,6 +116,7 @@ UINT8	arpEntrySearch(ipAddr ipaddr)
 		ipaddr.b32 = settings.gateway.b32; // use router
 	}
 	
+	//LED_ON();
 	// look for mac in arp table
 	for(UINT8 i = 0; i < MAX_ARP_ENTRY; i++)
 	{
@@ -131,7 +132,7 @@ void	arpReply()
 {
 	if((arp->hwType == HTONS(ETH_HW_ETH)) && (arp->prType == HTONS(ETH_TYPE_IP)) && (HTONS32(arp->targetIP.b32) == settings.ipaddr.b32))
 		{
-			LED_ON();
+			//LED_ON();
 			if(arp->opCode == ARP_REQUEST)
 			{
 				
@@ -160,6 +161,12 @@ void	arpReply()
 
 UINT8	arpRequest(ipAddr ipaddr)
 {
+	UINT8 f = arpEntrySearch(ipaddr);
+	if (f < MAX_ARP_ENTRY)
+	{
+		return f;
+	}
+	
 	ipAddr dstIPcpy;
 	dstIPcpy.b32 = ipaddr.b32;
 	
@@ -187,17 +194,17 @@ UINT8	arpRequest(ipAddr ipaddr)
 	
 	enc28j60_sendPacket(42, packetBuffer,0,0);
 	
-	/*//wait for reply
+	//wait for reply
 	for(UINT8 i = 0; i < 15; i++)
 	{
-		_delay_ms(10);
+		_delay_ms(20);
 		
-		ethGetData();
+		ethService();
 		UINT8 index = arpEntrySearch(ipaddr);
-		UINT8 index2 = arpEntrySearch(&dstIPcpy);
+		UINT8 index2 = arpEntrySearch(dstIPcpy);
 		if( (index < MAX_ARP_ENTRY) || (index2 < MAX_ARP_ENTRY))
-			return 1;
-	}*/
+			return (index < MAX_ARP_ENTRY)?index:index2;
+	}
 	
 	return 0;
 }
@@ -210,7 +217,7 @@ void	icmpService(/*ipAddr dstIp, UINT8 type*/)
 	{
 		
 		
-		LED_ON();
+		//LED_ON();
 		ip->length = HTONS(ICMP_REPLY_LEN);
 		ip->protocol = IP_PR_ICMP;
 		ip->sourceIP.b32 = HTONS32(ip->sourceIP.b32);
