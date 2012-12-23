@@ -22,8 +22,8 @@
 //#define VS_xDCS_DISABLE()	PORTB |= ~B1
 
 /* EEPROM */
-#define BUFFER_ENABLE()		PORTB &= ~B0
-#define BUFFER_DISABLE()	PORTB |= B0
+#define MCP23K_ENABLE()		PORTB &= ~B0
+#define MCP23K_DISABLE()	PORTB |= B0
 
 /* buttons */
 #define BUTTON_1			(PIND & B6)

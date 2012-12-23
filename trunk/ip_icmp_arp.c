@@ -135,7 +135,7 @@ void	arpReply()
 			//LED_ON();
 			if(arp->opCode == ARP_REQUEST)
 			{
-				
+				LED_OFF();
 				for (UINT8 i = 0; i < 6; i++)
 				{
 					eth->dstMac.b8[i] = eth->srcMac.b8[i];
@@ -161,6 +161,7 @@ void	arpReply()
 
 UINT8	arpRequest(ipAddr ipaddr)
 {
+	
 	UINT8 f = arpEntrySearch(ipaddr);
 	if (f < MAX_ARP_ENTRY)
 	{
@@ -191,14 +192,13 @@ UINT8	arpRequest(ipAddr ipaddr)
 	arp->hwLength = 6;
 	arp->prLength = 4;
 	arp->opCode = ARP_REQUEST;
-	
+	//LED_ON();
 	enc28j60_sendPacket(42, packetBuffer,0,0);
 	
 	//wait for reply
 	for(UINT8 i = 0; i < 15; i++)
 	{
 		_delay_ms(20);
-		
 		ethService();
 		UINT8 index = arpEntrySearch(ipaddr);
 		UINT8 index2 = arpEntrySearch(dstIPcpy);

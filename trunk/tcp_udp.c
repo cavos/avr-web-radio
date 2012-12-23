@@ -11,13 +11,19 @@
 #include "main.h"
 #include "types.h"
 #include "enc28j60.h"
-//#include "checksum.h"
 #include "eth.h"
 #include "fifo.h"
+
+#ifndef NULL
+#define NULL 0
+#endif
+
 
 TCP_HEADER	*tcp = (TCP_HEADER*)&packetBuffer[TCP_OFFSET];
 TCPtable	tcpTable[MAX_TCP_ENTRY];
 TCPtable	*tcpConn;
+UDP_HEADER  *udp = (UDP_HEADER *)&packetBuffer[UDP_OFFSET];
+UDPtable	udpTable[UDP_MAX_ENTRIES+1];
 
 void	tcpClose(UINT8 index)
 {
@@ -85,7 +91,8 @@ void	tcpService()
 	
 	for (i = 0; i < MAX_TCP_ENTRY; i++)
 	{
-		if( HTONS(tcp->dstPort) == tcpTable[i].localPort && HTONS(tcp->srcPort) == tcpTable[i].port)
+		if( (HTONS(tcp->dstPort) == tcpTable[i].localPort) &&
+		    (HTONS(tcp->srcPort) == tcpTable[i].port))
 		{
 			break;
 		}
@@ -139,9 +146,8 @@ void	tcpSFinish(UINT8 index) // waitig for ACK|FIN, send ACK
 		tcpTable[index].seqnum = HTONS32(tcp->ackNum);
 		tcpTable[index].acknum = HTONS32(tcp->seqNum) + 1;
 		tcpTable[index].flags = TCP_FLAG_ACK;
-		
-		tcpSend(index,0);
 		tcpTable[index].status = TCP_S_CLOSED;
+		tcpSend(index,0);
 	}
 }
 
@@ -153,23 +159,23 @@ void	tcpSOpen(UINT8 index) // syn & ack
 	} 
 	else if ( (tcp->flags&TCP_FLAG_SYN) && (tcp->flags&TCP_FLAG_ACK))
 	{
-		UINT16 len;
+		UINT16 len = HTONS(ip->length)-(IP_HEADER_SIZE+(tcp->length>>2));
 		
 		tcpTable[index].acknum = HTONS32(tcp->seqNum) + 1;
 		tcpTable[index].seqnum = HTONS32(tcp->ackNum);
 		tcpTable[index].flags = TCP_FLAG_ACK;
 		tcpTable[index].status = TCP_S_OPENED;
 		
-		//switch(HTONS(tcp->dstPort))
-		//{
-			//case STATION_PORT:
-				//tcpSend(index, len);
-			//break;
-		//}
-		len = tcpTable[index].appCall();
+		switch(HTONS(tcp->dstPort))
+		{
+			case STATION_PORT:
+				tcpSend(index, len);
+			break;
+		}
+		//len = tcpTable[index].appCall(&packetBuffer[TCP_DATA], 0);
 		tcpSend(index,len);
 	}
-	else
+	else  // abort
 	{
 		tcpTable[index].acknum = HTONS32(tcp->seqNum) + HTONS(ip->length) - (IP_HEADER_SIZE+(tcp->length>>2));
 		tcpTable[index].flags = TCP_FLAG_RST;
@@ -186,8 +192,8 @@ void	tcpSOpened(UINT8 index) //
 	} 
 	else if(tcp->flags&TCP_FLAG_FIN)
 	{
-		tcpTable[index].acknum = HTONS32(tcp->seqNum) + 1;
 		tcpTable[index].seqnum = HTONS32(tcp->ackNum);
+		tcpTable[index].acknum = HTONS32(tcp->seqNum) + 1;
 		tcpTable[index].flags = TCP_FLAG_FIN | TCP_FLAG_ACK;
 		tcpTable[index].status = TCP_S_FINISH;
 		tcpSend(index,0);
@@ -200,11 +206,23 @@ void	tcpSOpened(UINT8 index) //
 			return;
 		}
 		
-		UINT8 len = HTONS(ip->length) - (IP_HEADER_SIZE +(tcp->length>>2));
+		UINT16 len = HTONS(ip->length) - (IP_HEADER_SIZE +(tcp->length>>2));
 		tcpTable[index].acknum = HTONS32(tcp->seqNum) + len;
 		tcpTable[index].flags = TCP_FLAG_ACK;
 		
-		len = tcpTable[index].appCall();
+		switch(HTONS(tcp->dstPort))
+		{
+			case STATION_PORT: // station
+				len = 0;
+				tcpSend(index,len);
+			break;
+		}
+		
+		//if (tcpTable[index].appCall == NULL)
+		//{
+			//return;
+		//}
+		//len = tcpTable[index].appCall(&packetBuffer[TCP_DATA], len - TCP_HEADER_SIZE);
 		tcpSend(index,len);
 	}
 }
@@ -235,11 +253,11 @@ UINT8	tcpListen(UINT16 port)
 		if (tcp->flags == TCP_FLAG_SYN) // passive open
 		{
 			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
+			tcpTable[i].mac.b8[1] = eth->srcMac.b8[1];
+			tcpTable[i].mac.b8[2] = eth->srcMac.b8[2];
+			tcpTable[i].mac.b8[3] = eth->srcMac.b8[3];
+			tcpTable[i].mac.b8[4] = eth->srcMac.b8[4];
+			tcpTable[i].mac.b8[5] = eth->srcMac.b8[5];
 			tcpTable[i].ip.b32 = ip->sourceIP.b32;
 			tcpTable[i].port = HTONS(tcp->srcPort);
 			tcpTable[i].localPort = HTONS(tcp->dstPort);
@@ -258,11 +276,11 @@ UINT8	tcpListen(UINT16 port)
 		else if(tcp->flags&TCP_FLAG_FIN)
 		{
 			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
+			tcpTable[i].mac.b8[1] = eth->srcMac.b8[1];
+			tcpTable[i].mac.b8[2] = eth->srcMac.b8[2];
+			tcpTable[i].mac.b8[3] = eth->srcMac.b8[3];
+			tcpTable[i].mac.b8[4] = eth->srcMac.b8[4];
+			tcpTable[i].mac.b8[5] = eth->srcMac.b8[5];
 			tcpTable[i].ip.b32 = ip->sourceIP.b32;
 			tcpTable[i].port = HTONS(tcp->srcPort);
 			tcpTable[i].localPort = HTONS(tcp->dstPort);
@@ -279,11 +297,11 @@ UINT8	tcpListen(UINT16 port)
 		else
 		{
 			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
-			tcpTable[i].mac.b8[0] = eth->srcMac.b8[0];
+			tcpTable[i].mac.b8[1] = eth->srcMac.b8[1];
+			tcpTable[i].mac.b8[2] = eth->srcMac.b8[2];
+			tcpTable[i].mac.b8[3] = eth->srcMac.b8[3];
+			tcpTable[i].mac.b8[4] = eth->srcMac.b8[4];
+			tcpTable[i].mac.b8[5] = eth->srcMac.b8[5];
 			tcpTable[i].ip.b32 = ip->sourceIP.b32;
 			tcpTable[i].port = HTONS(tcp->srcPort);
 			tcpTable[i].localPort = HTONS(tcp->dstPort);
@@ -303,17 +321,98 @@ UINT8	tcpListen(UINT16 port)
 	return MAX_TCP_ENTRY;
 }
 
-UINT16	tcpChecksum(UINT8 *data, UINT16 len, ipAddr dstIp)
+UINT16	tcpChecksum(UINT8 index, UINT16 datalength)
+{
+	UINT32 sum = 0;
+	UINT8 *data = &packetBuffer[TCP_OFFSET];
+	UINT16 len = ip->length - IP_HEADER_SIZE;
+	LED_OFF();
+	// pseudo header
+	//sum += HTONS(settings.ipaddr.b16[0]);
+	//sum += HTONS(settings.ipaddr.b16[1]);
+	//sum += HTONS(tcpTable[index].ip.b16[0]);
+	//sum += HTONS(tcpTable[index].ip.b16[1]);
+	//sum += HTONS(len);
+	//sum += HTONS(IP_PR_TCP);
+	//
+	sum = sum + HTONS(settings.ipaddr.b16[0]);
+	sum = sum + HTONS(settings.ipaddr.b16[1]);
+	sum = sum + HTONS(tcpTable[index].ip.b16[0]);
+	sum = sum + HTONS(tcpTable[index].ip.b16[1]);
+	sum = sum + HTONS(len);
+	sum = sum + HTONS(IP_PR_TCP);
+	
+	for (; len > 1; len -= 2)
+	{
+		sum += *((UINT16*)data);
+		if (sum & 0x80000000)
+		{
+			sum = (sum&0xFFFF)+(sum>>16);
+			LED_ON();
+		}			
+		data += 2; // move pointer
+	}
+	
+	if(len) // left-over byte
+	{
+		sum += + *(UINT8*)data;
+	}
+	
+	while(sum>>16)
+	{
+		sum = (sum&0xFFFF)+(sum>>16);
+	}
+	
+	return ~sum;
+	
+	//UINT32 sum = 0;
+	//
+	//// pseudo header
+	//sum = sum + HTONS(settings.ipaddr.b16[0]);
+	//sum = sum + HTONS(settings.ipaddr.b16[1]);
+	//sum = sum + tcpTable[index].ip.b16[0];
+	//sum = sum + tcpTable[index].ip.b16[1];
+	//sum = sum + HTONS(datalength+TCP_HEADER_SIZE);
+	//sum = sum + HTONS(IP_PR_TCP);
+	//
+	//sum += checksum(&packetBuffer[TCP_OFFSET], datalength+TCP_HEADER_SIZE);
+	//
+	//while(sum>>16)
+	//{
+		//sum = (sum&0xFFFF)+(sum>>16);
+	//}
+	//
+	//return sum;
+}
+
+UINT16 udpChecksum(UINT8 index)
 {
 	UINT32 sum = 0;
 	
 	// pseudo header
 	sum = sum + settings.ipaddr.b16[0];
 	sum = sum + settings.ipaddr.b16[1];
-	sum = sum + dstIp.b16[0];
-	sum = sum + dstIp.b16[1];
-	sum = sum + HTONS(len);
-	sum = sum + HTONS(IP_PR_TCP);
+	sum = sum + udpTable[index].ip.b16[0];
+	sum = sum + udpTable[index].ip.b16[1];
+	sum = sum + HTONS(udp->lenght);
+	sum = sum + HTONS(IP_PR_UDP);
+	
+	sum += checksum(&packetBuffer[UDP_OFFSET], udp->lenght);
+	
+	return ~sum;
+}
+
+UINT16	checksum(UINT8 *data, UINT16 len)
+{
+	UINT32 sum = 0;
+	
+	//// pseudo header
+	//sum = sum + settings.ipaddr.b16[0];
+	//sum = sum + settings.ipaddr.b16[1];
+	//sum = sum + dstIp.b16[0];
+	//sum = sum + dstIp.b16[1];
+	//sum = sum + HTONS(len);
+	//sum = sum + HTONS(IP_PR_TCP);
 	
 	for (; len > 1; len -= 2)
 	{
@@ -331,7 +430,7 @@ UINT16	tcpChecksum(UINT8 *data, UINT16 len, ipAddr dstIp)
 		sum = (sum&0xFFFF)+(sum>>16);
 	}
 	
-	return ~sum;
+	return sum;
 }
 
 void	tcpMakeHeader(UINT8 index, UINT16 len)
@@ -343,12 +442,19 @@ void	tcpMakeHeader(UINT8 index, UINT16 len)
 	tcp->srcPort = HTONS(tcpTable[index].localPort);
 	tcp->dstPort = HTONS(tcpTable[index].port);
 	tcp->seqNum = HTONS32(tcpTable[index].seqnum);
-	tcp->ackNum = HTONS32(tcpTable[index].acknum);
+	if(tcpTable[index].flags & TCP_FLAG_ACK)
+	{
+		tcp->ackNum = HTONS32(tcpTable[index].acknum);
+	}
+	else
+	{
+		tcp->ackNum = 0UL;
+	}
 	tcp->length = TCP_HEADER_SIZE<<2;
 	tcp->flags = tcpTable[index].flags;
 	
 	UINT16 f;
-	f= fifo_free();
+	f= fifoFree();
 	
 	if (f > 4096)
 	{
@@ -370,7 +476,8 @@ void	tcpMakeHeader(UINT8 index, UINT16 len)
 	tcp->checksum = 0;
 	tcp->urgentPtr = 0;
 	
-	tcp->checksum = tcpChecksum((UINT8*)tcp, TCP_HEADER_SIZE+len, tcpTable[index].ip);
+	//tcp->checksum = tcpChecksum((UINT8*)tcp, TCP_HEADER_SIZE+len, tcpTable[index].ip);
+	tcp->checksum = tcpChecksum(index, len);
 }
 
 void	tcpTimeService()
@@ -398,4 +505,28 @@ void	tcpTimeService()
 			}
 		}
 	}
+}
+
+void	udpDbgSend(UINT8 *data, UINT16 len)
+{
+	for (UINT16 i = 0; i < len; i++)
+	{
+		packetBuffer[UDP_DATA+i] = *data++;
+	}
+	
+	udpMakeHeader(UDP_DEBUG, len);
+	
+	enc28j60_sendPacket((UDP_OFFSET+len), packetBuffer, 0,0);
+}
+
+void	udpMakeHeader(UINT8 index, UINT16 len)	
+{
+	udp->dstPort = HTONS(udpTable[index].dstPort);
+	udp->srcPort = HTONS(udpTable[index].localPort);
+	udp->lenght = HTONS(len);
+	
+	ip->protocol = IP_PR_UDP;
+	ip->length = HTONS(IP_HEADER_SIZE+UDP_HEADER_SIZE + len);
+	
+	udp->checksum = udpChecksum(index);
 }

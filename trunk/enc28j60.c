@@ -157,7 +157,7 @@ void enc28j60_init(void)
 	en28j60_writeOp(ENC28J60_SOFT_RESET, 0, ENC28J60_SOFT_RESET);
 	// check CLKRDY bit to see if reset is complete
 	_delay_us(50);
-	while(!(enc28j60_read(ESTAT) & ESTAT_CLKRDY));
+	while(!(enc28j60_read(ESTAT) & ESTAT_CLKRDY)){_delay_us(50);};
 
 	// do bank 0 stuff
 	// initialize receive buffer
@@ -238,7 +238,14 @@ void enc28j60_sendPacket(unsigned int len1, unsigned char* packet1, unsigned int
 	
 	// send the contents of the transmit buffer onto the network
 	en28j60_writeOp(ENC28J60_BIT_FIELD_SET, ECON1, ECON1_TXRTS);
-}
+	
+	//////////////////////////////////////////////////////////////////////////
+	enc28j60_write(ERDPTL, (ETXNDL + 1));
+	enc28j60_write(ERDPTH, ETXNDH);
+	
+	enc28j60_readOp(ENC28J60_READ_BUF_MEM, 0);
+	enc28j60_readOp(ENC28J60_READ_BUF_MEM, 0);
+	}
 
 unsigned int enc28j60_receivePacket(unsigned int maxlen, unsigned char* packet)
 {
@@ -246,7 +253,7 @@ unsigned int enc28j60_receivePacket(unsigned int maxlen, unsigned char* packet)
 	UINT16 len;
 
 	// check if a packet has been received and buffered
-//	if( !(enc28j60_read(EIR) & EIR_PKTIF) )
+	//if( !(enc28j60_read(EIR) & EIR_PKTIF) )
 	if( !enc28j60_read(EPKTCNT) )
 		return 0;
 
