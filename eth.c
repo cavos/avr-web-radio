@@ -35,12 +35,13 @@ void	ethService()
 	length = enc28j60_receivePacket(MTU_SIZE, packetBuffer);
 	if (length < 0)
 	{
+		
 		return;
 	}
 	// check packet type
 	if (eth->type == HTONS(ETH_TYPE_ARP))
 	{
-		arpReply();
+		arpReply();	
 	}
 	else
 	{
@@ -66,16 +67,6 @@ void	ethService()
 	}
 }
 
-//void	ethService()
-//{
-	//UINT16 length;
-	//
-	//length = enc28j60_receivePacket(MTU_SIZE, packetBuffer);
-	//if (length > 0)
-	//{
-		//ethService();
-	//}
-//}
 
 void	ethMakeHeader(ipAddr targetIp)
 {
@@ -88,7 +79,7 @@ void	ethMakeHeader(ipAddr targetIp)
 	}
 	
 	// search for MAC addr in ARP table
-	j = arpRequest(targetIp);
+	j = arpEntrySearch(targetIp);
 	
 	if (j != MAX_ARP_ENTRY)
 	{
@@ -107,12 +98,14 @@ void	ethMakeHeader(ipAddr targetIp)
 }
 
 void	ethInit()
-{
+{	
 	//ethArp();
+	UINT8 j;
+	
 	while(1)
 	{
 		
-		UINT8 j = arpEntrySearch(settings.gateway);
+		j = arpEntrySearch(settings.gateway);
 		
 		if (j != MAX_ARP_ENTRY)
 		{
@@ -136,6 +129,16 @@ void	ethInit()
 			}
 		}
 	}
+	
+	udpTable[UDP_DEBUG].dstPort = 1001;
+	udpTable[UDP_DEBUG].ip.b32 = 0xc0a80164;
+	udpTable[UDP_DEBUG].localPort = 6012;
+	udpTable[UDP_DEBUG].mac.b8[0] = arpTable[j].mac.b8[0];
+	udpTable[UDP_DEBUG].mac.b8[1] = arpTable[j].mac.b8[1];
+	udpTable[UDP_DEBUG].mac.b8[2] = arpTable[j].mac.b8[2];
+	udpTable[UDP_DEBUG].mac.b8[3] = arpTable[j].mac.b8[3];
+	udpTable[UDP_DEBUG].mac.b8[4] = arpTable[j].mac.b8[4];
+	udpTable[UDP_DEBUG].mac.b8[5] = arpTable[j].mac.b8[5];
 }
 
 void	ethTimeService()

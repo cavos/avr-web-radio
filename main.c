@@ -10,11 +10,13 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
+#include <avr/pgmspace.h>
 #include "types.h"
 #include "main.h"
 #include "fifo.h"
 #include "enc28j60.h"
 #include "eth.h"
+#include "mcp23k256.h"
 //#include "tux_enc28j60.h"
 //#include "tux_avr_compat.h"
 //#include "ethernet.h"
@@ -31,20 +33,12 @@ UINT8 a1[] = {0x48, 0x4F, 0x53, 0x54, 0x50, 0x43, 0x30, 0x52, 0x41, 0x44, 0x49, 
 			  0x98, 0x00, 0x00, 0x02, 0x10, 0x00, 0x20, 0x00, 0x00, 0x1A, 0xCF, 0xB3, 0xD0, 0x00, 0x44,
 			  0x55, 0x50, 0x41, 0x20, 0x49, 0x4E, 0x4F, 0x20, 0x44, 0x55, 0x50, 0x41, 0x20, 0x54, 0x45,
 			  0x53, 0x54, 0x20, 0x50, 0x41, 0x43, 0x4B, 0x45, 0x54, 0x00};
+UINT8 au[300];
 			  
 device	settings;
 
 int main(void)
 {
-	//UINT8 msg84[]= {0x54, 0x04, 0xA6, 0x07, 0x0B, 0x13, 0x00, 0x52, 0x41, 0x44, 0x49, 0x4F, 0x08, 0x00, 0x45, 0x00, 0x00, 0x2E,
-	//			  0x00, 0x00, 0x40, 0x00, 0x40, 0x11, 0x79, 0x08, 0xC0, 0xA8, 0x01, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	//			  0x00, 0x00, 0x00, 0x1A, 0x3E, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	//			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-	//UINT8 a2[1000];
-	//UINT16 ba = 0xC0F0;
-	
-	UINT8 rev;
-	
 	/* ports */
 	PORTA	= B0 | B1 | B2 | B3 | B4 | B5 | B6 | B7;
 	DDRA	= B0 | B1 | B2 | B3 | B4 | B5 | B6 | B7;
@@ -83,28 +77,20 @@ int main(void)
 	settings.mac.b8[5] = ENC28J60_MAC5;
 	settings.netmask.b32 = 0xFFFFFF00;
 	
+	LED_ON();
+	
 	enc28j60_init();
 	
-	fifo_init();
-	
-	enc28j60_sendPacket(67, a1, 0, 0);
-	//enc28j60_sendPacket(64, a1);
-	rev = enc28j60_getRevision();
-	PORTA = rev;
-	
-	//if (rev == 0x06)
-	//{
-		//LED_ON();
-	//}
-	while(enc28j60_receivePacket(67,a1))
-	{
-		LED_ON();
-	}
-	LED_OFF();
-	
+	mcp23kInit();
+	fifoInit();
+
+	_delay_ms(600);
+
 	ethInit();
-	//LED_ON();
+	
 	sei();
+	
+	tcpConnect(settings.gateway, STATION_PORT, 1001);
 	
 /************************************************************************/
 /* main loop                                                            */
@@ -114,20 +100,12 @@ int main(void)
         wdt_reset();
 		
 		ethService();
-				
+	
 		if( run_timeservice )
 		{
-			//ethTimeService();
+			////ethTimeService();
 			run_timeservice = 0x00;
-			LED_TOGGLE();
 		}		
-		else if( !BUTTON_1 )
-		{
-			enc28j60_sendPacket(67, a1, 0, 0);
-			LED_ON();
-			_delay_ms(100);
-			LED_OFF();
-		}			
     }
 }
 
@@ -135,7 +113,7 @@ ISR( TIMER1_COMPA_vect )
 {
 	time = time + 1;
 	run_timeservice = 0xFF;
-	//enc28j60_sendPacket(67, a1, 0, 0);
+	//LED_TOGGLE();
 	
 	return;
 }

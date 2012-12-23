@@ -11,8 +11,8 @@
 
 #include "types.h"
 
-#define HTONS(x)	(((x)&0x00FF)<<8)+(((x)&0xFF00)>>8)
-#define HTONS32(x)	((((x)&0xFF000000)>>24)|(((x)&0x00FF0000)>>8)|(((x)&0x0000FF00)<<8)|(((x)&0x000000FF)<<24))
+#define HTONS(x)	((((x)&0x00FF)<<8)+(((x)&0xFF00)>>8))
+#define HTONS32(x)	(((((x)&0xFF000000)>>24)|(((x)&0x00FF0000)>>8)|(((x)&0x0000FF00)<<8)|(((x)&0x000000FF)<<24)))
 
 #define IP_BROADCAST		0xFFFFFFFF
 
@@ -59,8 +59,16 @@ typedef	struct
 	UINT8	status;
 	UINT8	time;
 	UINT8	error;
-	UINT16	(*appCall)(void);
+	UINT16	(*appCall)(UINT8*, UINT16);
 } TCPtable;
+
+typedef	struct
+{
+	macAddr mac;
+	ipAddr ip;
+	UINT16 localPort;
+	UINT16 dstPort;
+}UDPtable;
 
 typedef	struct
 {
@@ -176,6 +184,20 @@ typedef struct
 #define TCP_S_CLOSE		4
 #define	TCP_S_FINISH	5
 
+// udp ------------------------------------------------------
+#define UDP_OFFSET		0x22
+#define UDP_HEADER_SIZE 8
+#define UDP_DATA		(ETH_HEADER_SIZE+IP_HEADER_SIZE+UDP_HEADER_SIZE)
+#define UDP_MAX_ENTRIES 5
+#define UDP_DEBUG		5
+
+typedef struct
+{
+	UINT16	srcPort;	// source port
+	UINT16	dstPort;	// destination port
+	UINT16	lenght;
+	UINT16	checksum;
+}UDP_HEADER;
 
 // struct pointers ------------------------------------------
 extern	ETH_HEADER	*eth;
@@ -183,10 +205,12 @@ extern	ARP_HEADER	*arp;
 extern	IP_HEADER	*ip;
 extern	ICMP_HEADER	*icmp;
 extern	TCP_HEADER	*tcp;
+extern	UDP_HEADER	*udp;
 
 extern	device		settings;
 extern	TCPtable	tcpTable[MAX_TCP_ENTRY];
 extern	TCPtable	*tcpConn;
+extern	UDPtable	udpTable[UDP_MAX_ENTRIES+1];
 extern	ARPtable	arpTable[MAX_ARP_ENTRY];
 extern	UINT8		packetBuffer[MTU_SIZE+1];
 
@@ -214,18 +238,23 @@ extern	void	tcpClose(UINT8 index);
 extern	void	tcpAbort(UINT8 index);
 extern	void	tcpSend(UINT8 index, UINT16 len);
 
+extern	void	udpDbgSend(UINT8 *data, UINT16 len);
+//extern	void	udpSend(UINT8 index);
+
 extern	void	ethMakeHeader(ipAddr targetIp);
 extern	void	ipMakeHeader(ipAddr	targetIp);
 extern	void	tcpMakeHeader(UINT8 index, UINT16 len);
+extern	void	udpMakeHeader(UINT8 index, UINT16 len);
 
 extern	UINT16	ipChecksum(); //proper computation?
-extern	UINT16	tcpChecksum(UINT8 *data, UINT16 len, ipAddr dstIp);
+extern	UINT16  tcpChecksum(UINT8 index, UINT16 datalength); // computes only tcp pseudo-header checksum
+extern	UINT16  udpChecksum(UINT8 index); // computes only udp pseudo-header checksum
+extern  UINT16	checksum(UINT8 *data, UINT16 len);
 
 extern	UINT16	htons(const UINT16 val);
 extern	UINT32	htons32(const UINT32 val);
 
 //-------------------------------------
-//extern	void	ethService();
 extern	void	arpAddEntry();
 extern	void	arpReply();
 extern	void	arpTimeService();
