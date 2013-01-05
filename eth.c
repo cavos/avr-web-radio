@@ -32,7 +32,7 @@ void	ethService()
 {
 	UINT16 length;
 	
-	length = enc28j60_receivePacket(MTU_SIZE, packetBuffer);
+	length = enc28j60_receivePacket(MTU_SIZE, packetBuffer, NULL);
 	if (length < 0)
 	{
 		
@@ -119,7 +119,7 @@ void	ethInit()
 			wdt_reset();
 		}
 		
-		UINT16	length = enc28j60_receivePacket(MTU_SIZE,packetBuffer);
+		UINT16	length = enc28j60_receivePacket(MTU_SIZE,packetBuffer, NULL);
 		if(length > 0)
 		{
 			//LED_ON();

@@ -17,9 +17,6 @@
 #include "enc28j60.h"
 #include "eth.h"
 #include "mcp23k256.h"
-//#include "tux_enc28j60.h"
-//#include "tux_avr_compat.h"
-//#include "ethernet.h"
 
 
 UINT32	get_time(void);
@@ -127,6 +124,17 @@ UINT32	get_time(void)
 	sei();
 	
 	return i;
+}
+
+int	get_deltaTime(UINT32 *time)
+{
+	int tmp;
+	
+	cli();
+	tmp = get_time() - *time;
+	sei();
+	
+	return tmp;
 }
 
 void	spi_write(UINT8 b)

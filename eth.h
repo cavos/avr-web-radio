@@ -16,22 +16,42 @@
 
 #define IP_BROADCAST		0xFFFFFFFF
 
+#ifndef MAX_ARP_ENTRY
 #define MAX_APP_ENTRY		5
+#endif
+
+#ifndef MAX_TCP_ENTRY
 #define MAX_TCP_ENTRY		5
+#endif
+
+#ifndef MAX_ARP_ENTRY
 #define MAX_ARP_ENTRY		5
+#endif
+
+#ifndef TCP_TIMEOFF
 #define TCP_TIMEOFF			0xff
+#endif
+
+#ifndef ARP_TIMEOFF
 #define ARP_TIMEOFF			0xff
+#endif
+
+#ifndef ARP_TIMEMAX
 #define ARP_TIMEMAX			90
-#define MTU_SIZE			1000
+#endif
 
-//typedef	UINT16	port_t;
+#ifndef MTU_SIZE
+#define MTU_SIZE			1200
+#endif
 
+// union uesd to store MAC address, can be accessed either as 8- or 16bit array
 typedef	union
 {
 	UINT8	b8[6];
 	UINT16	b16[3];
 } macAddr;
 
+// union used for storing IP address, can be accessed either as 8- or 16bit array or one 32bit value
 typedef	union
 {
 	UINT8	b8[4];
@@ -39,6 +59,7 @@ typedef	union
 	UINT32	b32;
 } ipAddr;
 
+// struct for holding basic network information about device and gateway address
 typedef	struct
 {
 	macAddr	mac;
@@ -47,6 +68,7 @@ typedef	struct
 	ipAddr	gateway;
 }device;
 
+// struct for holding information about TCP connections
 typedef	struct  
 {
 	macAddr	mac;
@@ -59,9 +81,10 @@ typedef	struct
 	UINT8	status;
 	UINT8	time;
 	UINT8	error;
-	UINT16	(*appCall)(UINT8*, UINT16);
+	//UINT16	(*appCall)(UINT8*, UINT16);
 } TCPtable;
 
+// struct for holding information about UDP connections
 typedef	struct
 {
 	macAddr mac;
@@ -70,6 +93,7 @@ typedef	struct
 	UINT16 dstPort;
 }UDPtable;
 
+// strut for holding information about ARP connections
 typedef	struct
 {
 	macAddr	mac;
@@ -153,7 +177,7 @@ typedef struct
 
 //	TCP	--------------------------------------------------------------
 #define TCP_OFFSET		0x22
-#define TCP_HEADER_SIZE	20
+#define TCP_HEADER_SIZE	(20)
 #define TCP_DATA		(ETH_HEADER_SIZE+IP_HEADER_SIZE+TCP_HEADER_SIZE)	
 #define TCP_TIMEOUT		3
 #define TCP_MAXERROR	5
@@ -216,37 +240,116 @@ extern	UINT8		packetBuffer[MTU_SIZE+1];
 
 
 // user must program it!
-//extern void nicSend(sd);
+//extern void	nicSend();
+//extern UINT16	nicReceive();
 
 
 // prototypes ----------------------------------------------------
+///<summary>
+/// Initializes TCP/IP stack, gets MAC address of gateway
+///</summary>
 extern	void	ethInit();
-//extern	void	ethArp();
+
+///<summary>
+/// Function used to process incoming packets, must be called within main loop
+///</summary>
 extern	void	ethService();
+
+///<summary>
+/// Used to perform periodical actions such as refreshing connection tables or attempting connection retries
+/// must be called periodically, call interval 1 second
+///</summary>
 extern	void	ethTimeService();
 
+///<summary>
+/// Search ARP table for requested IP address
+/// return index to ARP table with MAC address
+///</summary>
 extern	UINT8	arpEntrySearch(ipAddr ipaddr);
+
+///<summary>
+/// Translates IP address to MAC address
+/// return index to ARP table with MAC address
+///</summary>
 extern	UINT8	arpRequest(ipAddr ipaddr);
 
+///<summary>
+/// Routine used to process ICMP packets, restricted to replying for ECHO packets
+///</summary>
 extern	void	icmpService();
 
+///<summary>
+/// Routine used to process TCP packets
+///</summary>
 extern	void	tcpService();
+
+///<summary>
+/// Method used to clean-up TCP table, called periodically
+///</summary>
 extern	void	tcpTimeService();
-extern	UINT8	tcpConnect(ipAddr targetIp, UINT16 dstPort, UINT16 srcPort); // if success, returns tcpTable entry number of connection else MAX_TCP_ENTRY
-extern	UINT8	tcpListen(UINT16 port); // if success, returns tcpTable entry number of connection else MAX_TCP_ENTRY
+
+///<summary>
+/// Function used to connect to specified server
+/// ipAddr targetIp - ip address of server
+/// UINT16 dstPort - server port
+/// UINT16 srcPort - local port
+/// return index of this connection in TCP table, MAX_TCP_ENTRY on error or table full
+///</summary>
+extern	UINT8	tcpConnect(ipAddr targetIp, UINT16 dstPort, UINT16 srcPort);
+
+///<summary>
+/// Listens to selected port and creates connection if SYN packet arrives
+/// UINT16 port - listen port
+/// return index of this connection in TCP table, MAX_TCP_ENTRY on error or table full
+///</summary>
+extern	UINT8	tcpListen(UINT16 port);
+
+///<summary>
+/// Close selected connection, send FIN
+///</summary>
 extern	void	tcpClose(UINT8 index);
+
+///<summary>
+/// Aborts connection
+///</summary>
 extern	void	tcpAbort(UINT8 index);
+
+///<summary>
+/// Sends data
+///</summary>
 extern	void	tcpSend(UINT8 index, UINT16 len);
 
 extern	void	udpDbgSend(UINT8 *data, UINT16 len);
 //extern	void	udpSend(UINT8 index);
 
+///<summary>
+/// Make ethernet header
+/// ipAddr targetIp - ip address of server
+///</summary>
 extern	void	ethMakeHeader(ipAddr targetIp);
+
+///<summary>
+/// Make IPv4 header
+/// ipAddr targetIp - ip address of server
+///</summary>
 extern	void	ipMakeHeader(ipAddr	targetIp);
+
+///<summary>
+/// Make TCP header
+/// UINT8 index - connection number in TCP table
+/// UINT16 len - length of data
+///</summary>
 extern	void	tcpMakeHeader(UINT8 index, UINT16 len);
+
+///<summary>
+/// Make UDP header
+/// UINT8 index - connection number in UDP table
+/// UINT16 len - length of data
+///</summary>
 extern	void	udpMakeHeader(UINT8 index, UINT16 len);
 
-extern	UINT16	ipChecksum(); //proper computation?
+
+extern	UINT16	ipChecksum();
 extern	UINT16  tcpChecksum(UINT8 index, UINT16 datalength); // computes only tcp pseudo-header checksum
 extern	UINT16  udpChecksum(UINT8 index); // computes only udp pseudo-header checksum
 extern  UINT16	checksum(UINT8 *data, UINT16 len);

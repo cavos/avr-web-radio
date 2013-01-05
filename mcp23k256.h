@@ -31,26 +31,34 @@
 
 // proto ----------------------------------------
 ///<summary>
-/// Initializes Microchip 23k256 SRAM memory
+/// Initializes Microchip 23k256 SRAM memory, can be used to reset memory
 ///</summary>
 void	mcp23kInit();
 
 ///<summary>
-/// Write operation, returns amount of data written to memory
+/// Writes data into memory
+/// UINT16 addr - address from which data will be written
+/// UINT8 *d - pointer to data
+/// UINT16 len - length of data
+/// returns amount of data written to memory, 0 means memory full or invalid write address
 ///</summary>
 UINT16	mcp23kWrite(UINT16 addr, UINT8 *data, UINT16 len);
 
 ///<summary>
-/// Read operation, retruns amout of data has been read
+/// Reads data from memory
+/// UINT16 addr - 
+/// retruns amout of data has been read, 0 means memory empty or invalid read address
 ///</summary>
 UINT16	mcp23kRead(UINT16 addr, UINT8 *data, UINT16 len);
 
 ///<summary>
-/// Returns amount of free memory 
+/// Computes amount of free memory
+/// retruns amount of free memory
 ///</summary>
 UINT16	mcp23kFree();
 
 ///<summary>
+/// Computes amount of memory used
 /// Returns amout of allocated memory
 ///</summary>
 UINT16	mcp23kUsed();

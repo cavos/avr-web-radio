@@ -41,6 +41,8 @@
 void	spi_write( UINT8 b);
 UINT8	spi_read( );
 UINT8	spi_transfer(UINT8 b);
+UINT32	get_time(void);
+int	get_deltaTime(UINT32 *time);
 
 extern volatile	UINT32 time;
 
