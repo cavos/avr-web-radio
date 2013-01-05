@@ -20,7 +20,7 @@ void	mcp23kInit()
 
 UINT16	mcp23kWrite(UINT16 addr, UINT8 *data, UINT16 len)
 {
-	if (addr > MCP23K_SIZE)
+	if ((addr > MCP23K_SIZE) || (mcp23kFree() == 0))
 	{
 		return 0;
 	}
@@ -52,6 +52,11 @@ UINT16	mcp23kWrite(UINT16 addr, UINT8 *data, UINT16 len)
 
 UINT16	mcp23kRead(UINT16 addr, UINT8 *data, UINT16 len)
 {
+	if ((addr > MCP23K_SIZE) || (mcp23kUsed() == 0))
+	{
+		return 0;
+	}
+	
 	UINT8 i;
 	
 	if (len > mcp23kUsed() || mcp23kUsed() == 0x0000)

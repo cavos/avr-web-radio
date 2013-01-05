@@ -7,6 +7,8 @@
 #include <avr/pgmspace.h>
 #include "station.h"
 #include "fifo.h"
+#include <string.h>
+#include "rtsp.h"
 
 UINT8	station_item;
 UINT8	station_status;
@@ -56,13 +58,13 @@ UINT8	stationOpen(UINT8 item)
 	
 	r = STATION_ERROR;
 	stationProto(item, proto);
-	if (strcmp(proto, "shoutcast"))
+	if (*proto == PROTO_SHOUTCAST)
 	{
 		//r = shoutcastOpen();
 	}
-	else if(strcmp(proto, "rtsp"))
+	else if(*proto == PROTO_RTSP)
 	{
-		//r = rtspOpen();
+		r = rtspOpen(item);
 	}
 	
 	if (r == STATION_OPENED)
@@ -82,7 +84,7 @@ void	stationService()
 		case STATION_OPENED:
 			station_timeouts = 0;
 			
-			if(fifoBuffer() < station_minBuf) // check buffer
+			if(fifoLength() < station_minBuf) // check buffer
 			{
 				station_status =STATION_BUFFERING;
 				//vsPause();
@@ -98,7 +100,7 @@ void	stationService()
 			break;
 			
 		case STATION_BUFFERING:
-			if (fifo_buffer() > station_playBuf)
+			if (fifoLength() > station_playBuf)
 			{
 				station_status = STATION_OPENED;
 				//vsPlay();
@@ -111,7 +113,7 @@ void	stationService()
 			break;
 			
 		case STATION_OPEN:
-			if (fifo_buffer() > station_playBuf)
+			if (fifoLength() > station_playBuf)
 			{
 				station_status = STATION_OPENED;
 				//vsPlay();
@@ -132,23 +134,40 @@ void	stationService()
 	}
 }
 
-void	stationAddr(UINT8 item, ipAddr *ip, UINT16 *port, UINT8 *url)
-{
-	char addr[32];
-	UINT8 *ptr = &addr[0];
-	
+void	stationAddr(UINT8 item, ipAddr *ip, UINT16 *port, char *url)
+{	
 	switch(item)
 	{
 		case 0:
-			strcpy_P(addr, PSTR("72.233.84.175:8030")); // DUBSTEP.FM 64K
+			strcpy_P(url, PSTR("http://72.233.84.175/")); // DUBSTEP.FM 64K
+			ip->b8[3] = 72;
+			ip->b8[2] = 233;
+			ip->b8[1] = 84;
+			ip->b8[0] = 175;
+			
+			*port = 8030;
 			break;
 		case 1:
-			strcpy_P(addr, PSTR("217.74.72.11:9000")); // RMF FM
+			strcpy_P(addr, PSTR("http://217.74.72.11/")); // RMF FM
+			ip->b8[3] = 217;
+			ip->b8[2] = 74;
+			ip->b8[1] = 72;
+			ip->b8[0] = 11;
+			
+			*port = 9000;
 			break;
 		case 2:
+			strcpy_P(addr, PSTR("http://192.168.1.100"));
+			ip->b8[3] = 192;
+			ip->b8[2] = 168;
+			ip->b8[1] = 1;
+			ip->b8[0] = 100;
 			
+			*port = 8554;
 			break;
 	}
+	
+	
 }
 
 void	stationProto(UINT8 item, UINT8 *proto)
@@ -156,13 +175,16 @@ void	stationProto(UINT8 item, UINT8 *proto)
 	switch(item)
 	{
 		case 0:
-			strcpy_P(proto, PSTR("shoutcast"));
+			//strcpy_P((char*)proto, PSTR("shoutcast"));
+			*proto = PROTO_SHOUTCAST;
 			break;
 		case 1:
-			strcpy_P(proto, PSTR("shoutcast"));
+			//strcpy_P((char*)proto, PSTR("shoutcast"));
+			*proto = PROTO_SHOUTCAST;
 			break;
 		case 2:
-			strcpy_P(proto, PSTR("rtsp"));
+			//strcpy_P((char*)proto, PSTR("rtsp"));
+			*proto = PROTO_RTSP;
 			break;
 	}
 }
@@ -172,13 +194,13 @@ void	stationName(UINT8 item, UINT8 *n)
 	switch(item)
 	{
 		case 0:
-			strcpy_P(n, PSTR("DUBSTEP.FM\n"));
+			strcpy_P((char*)n, PSTR("DUBSTEP.FM\n"));
 			break;
 		case 1:
-			strcpy_P(n, PSTR("RMF FM\n"));
+			strcpy_P((char*)n, PSTR("RMF FM\n"));
 			break;
 		case 2:
-			strcpy_P(n, PSTR("RTSP test\n"));
+			strcpy_P((char*)n, PSTR("RTSP test\n"));
 			break;
 	}
 }

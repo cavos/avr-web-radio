@@ -1,8 +1,12 @@
 #ifndef ENC28J60_H
 #define ENC28J60_H
 
-//#include "global.h"
 #include "types.h"
+
+/// TODO:
+/// transmit status vectors
+/// filters configurations
+/// readBuffer - amount of data read
 
 //#define nop()	asm volatile ("nop")
 
@@ -238,19 +242,114 @@
 
 
 // Prototypes
+///<summary>
+/// Issues read operation only for non-PHY register, for PHY registers use phyRead
+/// UINT8 op - operation code
+/// UINT8 address - register address
+///</summary>
 UINT8	enc28j60_readOp(UINT8 op, UINT8 address);
-void	enc28j60_writeOp(UINT8 op, UINT8 address, UINT8 data);
-void	enc28j60_readBuffer(UINT16 len, UINT8* data);
-void	enc28j60_writeBuffer(UINT16 len, UINT8* data);
-void	enc28j60_setBank(UINT8 address);
-UINT8	enc28j60_read(UINT8 address);
-void	enc28j60_write(UINT8 address, UINT8 data);
-UINT16	enc28j60_phyRead(UINT8 address);
-void	enc28j60_phyWrite(UINT8 address, UINT16 data);
-void	enc28j60_init(void);
-void	enc28j60_sendPacket(unsigned int len1, unsigned char* packet1, unsigned int len2, unsigned char* packet2);
-unsigned int enc28j60_receivePacket(unsigned int maxlen, unsigned char* packet);
 
+///<summary>
+/// Issues write operation only for non-PHY register, for PHY registers use phyRead
+/// UINT8 op - operation code
+/// UINT8 address - register address
+///</summary>
+void	enc28j60_writeOp(UINT8 op, UINT8 address, UINT8 data);
+
+///<summary>
+/// Reads data from buffer
+/// UINT16 len - maximum amount of data to read
+/// UINT8 *data - pointer to data
+///</summary>
+void	enc28j60_readBuffer(UINT16 len, UINT8* data);
+
+///<summary>
+/// Writes data to buffer
+/// UINT16 len - length of data
+/// UINT8 *data - pointer to data
+///</summary>
+void	enc28j60_writeBuffer(UINT16 len, UINT8* data);
+
+///<summary>
+/// Set register bank 
+/// UINT8 address - address of register, bank number is held in address
+///</summary>
+void	enc28j60_setBank(UINT8 address);
+
+///<summary>
+/// Read register values
+/// UINT8 address - register address, only non-PHY registers
+/// return register value
+///</summary>
+UINT8	enc28j60_read(UINT8 address);
+
+///<summary>
+/// Write data to register
+/// UINT8 address - register address, only non-PHY registers
+/// UINT8 data - data to be written
+///</summary>
+void	enc28j60_write(UINT8 address, UINT8 data);
+
+///<summary>
+/// Read PHy register
+/// UINT8 address - PHY register address
+/// return PHY 16 bit long register value
+///</summary>
+UINT16	enc28j60_phyRead(UINT8 address);
+
+///<summary>
+/// Write to PHY register
+/// UINT8 address - PHY register address
+/// UINT16 data - PHY register value to be written
+///</summary>
+void	enc28j60_phyWrite(UINT8 address, UINT16 data);
+
+///<summary>
+/// Initializes ENC28J60 controller, can be used to reset device
+///</summary>
+void	enc28j60_init(void);
+
+///<summary>
+/// Sends up to two packets
+/// unsigned int len1 - length of first packet
+/// unsgined char *packet1 - pointer to the first packet
+/// unsigned int len2 - length of second packet
+/// unsgined char *packet2 - pointer to the second packet
+///</summary>
+void	enc28j60_sendPacket(unsigned int len1, unsigned char* packet1, unsigned int len2, unsigned char* packet2);
+
+///<summary>
+/// Sends packet, send status vector is returned
+/// unsigned int len - length of packet
+/// unsigned char *packet - pointer to packet
+/// unsigned char *statusVector - pointer to status vector
+/// returns transmit status vector in statusVector pointer
+///</summary>
+void	enc28j60_sendVPacket(unsigned int len, unsigned char *packet, unsigned char *statusVector);
+
+///<summary>
+/// Receive packet stored in receive buffer
+/// unsigned int maxlen - maximum length of received packet
+/// unsigned char *packet - pointer to data
+/// return length of packet
+///</summary>
+//unsigned int enc28j60_receivePacket(unsigned int maxlen, unsigned char* packet);
+
+///<summary>
+/// Receive packet stored in receive buffer
+/// unsigned int maxlen - maximum length of received packet
+/// unsigned char *packet - pointer to data
+/// unsigned char *vector - pointer to status vector
+/// returns transmit status vector in statusVector pointer
+/// return length of packet
+///</summary>
+UINT16 enc28j60_receivePacket(UINT16 maxlen, UINT8 *packet, UINT8 *vector);
+
+
+///<summary>
+/// Read revision number
+/// return chip revision number
+///</summary>
 UINT8 enc28j60_getRevision();
 
 #endif

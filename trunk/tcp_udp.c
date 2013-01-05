@@ -325,16 +325,9 @@ UINT16	tcpChecksum(UINT8 index, UINT16 datalength)
 {
 	UINT32 sum = 0;
 	UINT8 *data = &packetBuffer[TCP_OFFSET];
-	UINT16 len = ip->length - IP_HEADER_SIZE;
+	UINT16 len = HTONS(ip->length) - IP_HEADER_SIZE;
 	LED_OFF();
-	// pseudo header
-	//sum += HTONS(settings.ipaddr.b16[0]);
-	//sum += HTONS(settings.ipaddr.b16[1]);
-	//sum += HTONS(tcpTable[index].ip.b16[0]);
-	//sum += HTONS(tcpTable[index].ip.b16[1]);
-	//sum += HTONS(len);
-	//sum += HTONS(IP_PR_TCP);
-	//
+
 	sum = sum + HTONS(settings.ipaddr.b16[0]);
 	sum = sum + HTONS(settings.ipaddr.b16[1]);
 	sum = sum + HTONS(tcpTable[index].ip.b16[0]);

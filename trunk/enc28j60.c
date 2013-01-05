@@ -6,6 +6,10 @@
 #include "main.h"
 //#include "enc28j60conf.h"
 
+#ifndef NULL
+#define NULL 0
+#endif
+
 UINT8 Enc28j60Bank;
 UINT16 NextPacketPtr;
 
@@ -240,14 +244,9 @@ void enc28j60_sendPacket(unsigned int len1, unsigned char* packet1, unsigned int
 	en28j60_writeOp(ENC28J60_BIT_FIELD_SET, ECON1, ECON1_TXRTS);
 	
 	//////////////////////////////////////////////////////////////////////////
-	enc28j60_write(ERDPTL, (ETXNDL + 1));
-	enc28j60_write(ERDPTH, ETXNDH);
-	
-	enc28j60_readOp(ENC28J60_READ_BUF_MEM, 0);
-	enc28j60_readOp(ENC28J60_READ_BUF_MEM, 0);
 	}
 
-unsigned int enc28j60_receivePacket(unsigned int maxlen, unsigned char* packet)
+unsigned int enc28j60_receivePacket(UINT16 maxlen, UINT8 *packet, UINT8 *vector)
 {
 	UINT16 rxstat;
 	UINT16 len;
@@ -269,10 +268,14 @@ unsigned int enc28j60_receivePacket(unsigned int maxlen, unsigned char* packet)
 	// read the receive status
 	rxstat  = enc28j60_readOp(ENC28J60_READ_BUF_MEM, 0);
 	rxstat |= enc28j60_readOp(ENC28J60_READ_BUF_MEM, 0)<<8;
+	
+	if (vector != NULL)
+	{
+		(*vector) = rxstat;
+	}
 
 	// limit retrieve length
 	// (we reduce the MAC-reported length by 4 to remove the CRC)
-	//len = MIN(len, maxlen);
 	len = len>maxlen?maxlen:len;
 
 	// copy the packet from the receive buffer
@@ -292,4 +295,14 @@ unsigned int enc28j60_receivePacket(unsigned int maxlen, unsigned char* packet)
 UINT8	enc28j60_getRevision()
 {
 	return enc28j60_read(EREVID);
+}
+
+void	enc28j60_sendVPacket(unsigned int len, unsigned char *packet, unsigned char *statusVector)
+{
+	enc28j60_sendPacket(len,packet, 0,0);
+	
+	enc28j60_write(ERDPTL, (TXSTART_INIT+len+1));
+	enc28j60_write(ERDPTH, (TXSTART_INIT+len+1)>>8);
+	
+	enc28j60_readBuffer(7, statusVector);
 }

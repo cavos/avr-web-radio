@@ -25,6 +25,9 @@
 
 #define ITEM_COUNT	3
 
+#define	PROTO_SHOUTCAST		(22)
+#define PROTO_RTSP			(45)
+
 extern	UINT8	station_item;
 extern	UINT8	station_status;
 extern	UINT8	station_timeouts;
@@ -39,7 +42,7 @@ extern	void	staionClose();
 extern	UINT8	stationOpen(UINT8 item);
 extern	void	stationService();
 extern	void	stationName(UINT8 item, UINT8 *n);
-extern	void	stationAddr(UINT8 item, ipAddr *ip, UINT16 *port, UINT8 *url);
+extern	void	stationAddr(UINT8 item, ipAddr *ip, UINT16 *port, char *url);
 extern	void	stationProto(UINT8 item, UINT8 *proto);
 
 #endif /* STATION_H_ */
