@@ -135,7 +135,7 @@ void	arpReply()
 			//LED_ON();
 			if(arp->opCode == ARP_REQUEST)
 			{
-				LED_OFF();
+				//LED_OFF();
 				for (UINT8 i = 0; i < 6; i++)
 				{
 					eth->dstMac.b8[i] = eth->srcMac.b8[i];

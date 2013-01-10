@@ -238,6 +238,10 @@ extern	UDPtable	udpTable[UDP_MAX_ENTRIES+1];
 extern	ARPtable	arpTable[MAX_ARP_ENTRY];
 extern	UINT8		packetBuffer[MTU_SIZE+1];
 
+extern	UINT8		udpDoChecksum;
+#define UDP_CHECKSUM_ON	255
+#define UDP_CHECKSUM_OFF		0
+
 
 // user must program it!
 //extern void	nicSend();
@@ -319,7 +323,7 @@ extern	void	tcpAbort(UINT8 index);
 ///</summary>
 extern	void	tcpSend(UINT8 index, UINT16 len);
 
-extern	void	udpDbgSend(UINT8 *data, UINT16 len);
+extern	void	udpDbgSend(const char *data, UINT16 len);
 //extern	void	udpSend(UINT8 index);
 
 ///<summary>

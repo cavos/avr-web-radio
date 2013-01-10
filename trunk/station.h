@@ -23,7 +23,7 @@
 #define STATION_ERROR		4
 #define STATION_ERRTIMEOUT	5
 
-#define ITEM_COUNT	3
+#define ITEM_COUNT	4
 
 #define	PROTO_SHOUTCAST		(22)
 #define PROTO_RTSP			(45)

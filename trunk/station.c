@@ -9,6 +9,7 @@
 #include "fifo.h"
 #include <string.h>
 #include "rtsp.h"
+#include "shoutcast.h"
 
 UINT8	station_item;
 UINT8	station_status;
@@ -48,7 +49,7 @@ UINT8	stationOpen(UINT8 item)
 {
 	if(item >= ITEM_COUNT){return 0xFF;}
 	UINT8 r;
-	UINT8 proto[10];
+	UINT8 proto;
 	
 	station_item = item;
 	station_status = STATION_OPEN;
@@ -57,12 +58,12 @@ UINT8	stationOpen(UINT8 item)
 	//vsStart();
 	
 	r = STATION_ERROR;
-	stationProto(item, proto);
-	if (*proto == PROTO_SHOUTCAST)
+	stationProto(item, &proto);
+	if (proto == PROTO_SHOUTCAST)
 	{
-		//r = shoutcastOpen();
+		r = shoutcastOpen(item);
 	}
-	else if(*proto == PROTO_RTSP)
+	else if(proto == PROTO_RTSP)
 	{
 		r = rtspOpen(item);
 	}
@@ -148,7 +149,7 @@ void	stationAddr(UINT8 item, ipAddr *ip, UINT16 *port, char *url)
 			*port = 8030;
 			break;
 		case 1:
-			strcpy_P(addr, PSTR("http://217.74.72.11/")); // RMF FM
+			strcpy_P(url, PSTR("http://217.74.72.11/")); // RMF FM
 			ip->b8[3] = 217;
 			ip->b8[2] = 74;
 			ip->b8[1] = 72;
@@ -157,13 +158,22 @@ void	stationAddr(UINT8 item, ipAddr *ip, UINT16 *port, char *url)
 			*port = 9000;
 			break;
 		case 2:
-			strcpy_P(addr, PSTR("http://192.168.1.100"));
+			strcpy_P(url, PSTR("http://192.168.10.100"));
 			ip->b8[3] = 192;
 			ip->b8[2] = 168;
-			ip->b8[1] = 1;
+			ip->b8[1] = 10;
 			ip->b8[0] = 100;
 			
 			*port = 8554;
+			break;
+		case 3:
+			strcpy_P(url, PSTR("/"));
+			ip->b8[3] = 192;
+			ip->b8[2] = 168;
+			ip->b8[1] = 10;
+			ip->b8[0] = 100;
+			
+			*port = 8000;
 			break;
 	}
 	
@@ -186,6 +196,10 @@ void	stationProto(UINT8 item, UINT8 *proto)
 			//strcpy_P((char*)proto, PSTR("rtsp"));
 			*proto = PROTO_RTSP;
 			break;
+			
+		case 3:
+			*proto = PROTO_SHOUTCAST;
+			break;
 	}
 }
 
@@ -202,5 +216,8 @@ void	stationName(UINT8 item, UINT8 *n)
 		case 2:
 			strcpy_P((char*)n, PSTR("RTSP test\n"));
 			break;
+		case 3:
+			strcpy_P((char*)n, PSTR("SHOUTCAST test\n"));
+		break;
 	}
 }
