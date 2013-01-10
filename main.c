@@ -17,6 +17,8 @@
 #include "enc28j60.h"
 #include "eth.h"
 #include "mcp23k256.h"
+#include "shoutcast.h"
+#include "station.h"
 
 
 UINT32	get_time(void);
@@ -64,8 +66,16 @@ int main(void)
 	SPCR = (1<<SPE)|(1<<MSTR)|(1<<SPR1);
     SPSR |= (1<<SPI2X);
 	
-	settings.gateway.b32 = 0xc0a80164; // 192.168.1.100
-	settings.ipaddr.b32 = 0xc0a80173; // 192.168.1.115
+	//settings.gateway.b32 = 0xc0a80164; // 192.168.1.100
+	//settings.ipaddr.b32 = 0xc0a80173; // 192.168.1.115
+	settings.gateway.b8[3] = 192;
+	settings.gateway.b8[2] = 168;
+	settings.gateway.b8[1] = 10;
+	settings.gateway.b8[0] = 100;
+	settings.ipaddr.b8[3] = 192;
+	settings.ipaddr.b8[2] = 168;
+	settings.ipaddr.b8[1] = 10;
+	settings.ipaddr.b8[0] = 115;
 	settings.mac.b8[0] = ENC28J60_MAC0;
 	settings.mac.b8[1] = ENC28J60_MAC1;
 	settings.mac.b8[2] = ENC28J60_MAC2;
@@ -87,7 +97,8 @@ int main(void)
 	
 	sei();
 	
-	tcpConnect(settings.gateway, STATION_PORT, 1001);
+	//tcpConnect(settings.gateway, 8000, 24111);
+	stationOpen(SHOUTCAST_TEST);
 	
 /************************************************************************/
 /* main loop                                                            */

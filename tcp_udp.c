@@ -8,11 +8,13 @@
 
 #include <util/delay.h>
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 #include "main.h"
 #include "types.h"
 #include "enc28j60.h"
 #include "eth.h"
 #include "fifo.h"
+#include "shoutcast.h"
 
 #ifndef NULL
 #define NULL 0
@@ -24,14 +26,17 @@ TCPtable	tcpTable[MAX_TCP_ENTRY];
 TCPtable	*tcpConn;
 UDP_HEADER  *udp = (UDP_HEADER *)&packetBuffer[UDP_OFFSET];
 UDPtable	udpTable[UDP_MAX_ENTRIES+1];
+UINT8		udpDoChecksum = UDP_CHECKSUM_ON;
 
 void	tcpClose(UINT8 index)
 {
+	//udpDbgSend(PSTR("TCP->Close"), 10);
 	tcpTable[index].status = TCP_S_CLOSE;
 }
 
 void	tcpAbort(UINT8 index)
 {
+	//udpDbgSend(PSTR("TCP->Abort"), 10);
 	tcpTable[index].status = TCP_S_ABORT;
 }
 
@@ -71,6 +76,7 @@ UINT8	tcpConnect(ipAddr targetIp, UINT16 dstPort, UINT16 srcPort)
 	tcpTable[i].error = 0;
 	
 	tcpSend(i, 0);
+	//udpDbgSend(PSTR("TCP->Conn"), 9);
 	
 	return j;
 }
@@ -156,6 +162,7 @@ void	tcpSOpen(UINT8 index) // syn & ack
 	if ( (tcp->flags&TCP_FLAG_FIN) || (tcp->flags&TCP_FLAG_RST))
 	{
 		tcpTable[index].status = TCP_S_CLOSED;
+		//udpDbgSend(PSTR("TCP->FIN|RST->CLOSE"),19);
 	} 
 	else if ( (tcp->flags&TCP_FLAG_SYN) && (tcp->flags&TCP_FLAG_ACK))
 	{
@@ -166,14 +173,17 @@ void	tcpSOpen(UINT8 index) // syn & ack
 		tcpTable[index].flags = TCP_FLAG_ACK;
 		tcpTable[index].status = TCP_S_OPENED;
 		
-		switch(HTONS(tcp->dstPort))
+		switch(HTONS(tcp->srcPort))
 		{
-			case STATION_PORT:
-				tcpSend(index, len);
+			case SHOUTCAST_SERVERPORT:
+			LED_OFF();
+				shoutcastTcpApp(index, &packetBuffer[TCP_DATA], len-TCP_HEADER_SIZE);
+				//tcpSend(index, 0);
 			break;
 		}
 		//len = tcpTable[index].appCall(&packetBuffer[TCP_DATA], 0);
 		tcpSend(index,len);
+		//udpDbgSend(PSTR("TCP->Opened"),11);
 	}
 	else  // abort
 	{
@@ -210,9 +220,10 @@ void	tcpSOpened(UINT8 index) //
 		tcpTable[index].acknum = HTONS32(tcp->seqNum) + len;
 		tcpTable[index].flags = TCP_FLAG_ACK;
 		
-		switch(HTONS(tcp->dstPort))
+		switch(HTONS(tcp->srcPort))
 		{
-			case STATION_PORT: // station
+			case SHOUTCAST_SERVERPORT: // station
+				shoutcastTcpApp(index, &packetBuffer[TCP_DATA], len);
 				len = 0;
 				tcpSend(index,len);
 			break;
@@ -326,7 +337,7 @@ UINT16	tcpChecksum(UINT8 index, UINT16 datalength)
 	UINT32 sum = 0;
 	UINT8 *data = &packetBuffer[TCP_OFFSET];
 	UINT16 len = HTONS(ip->length) - IP_HEADER_SIZE;
-	LED_OFF();
+	//LED_OFF();
 
 	sum = sum + HTONS(settings.ipaddr.b16[0]);
 	sum = sum + HTONS(settings.ipaddr.b16[1]);
@@ -382,6 +393,11 @@ UINT16 udpChecksum(UINT8 index)
 {
 	UINT32 sum = 0;
 	
+	if (udpDoChecksum == UDP_CHECKSUM_OFF)
+	{
+		return 0;
+	}
+	
 	// pseudo header
 	sum = sum + settings.ipaddr.b16[0];
 	sum = sum + settings.ipaddr.b16[1];
@@ -390,7 +406,7 @@ UINT16 udpChecksum(UINT8 index)
 	sum = sum + HTONS(udp->lenght);
 	sum = sum + HTONS(IP_PR_UDP);
 	
-	sum += checksum(&packetBuffer[UDP_OFFSET], udp->lenght);
+	sum += checksum(&packetBuffer[UDP_OFFSET], HTONS(udp->lenght));
 	
 	return ~sum;
 }
@@ -500,14 +516,19 @@ void	tcpTimeService()
 	}
 }
 
-void	udpDbgSend(UINT8 *data, UINT16 len)
+void	udpDbgSend(const char *data, UINT16 len)
 {
 	for (UINT16 i = 0; i < len; i++)
 	{
 		packetBuffer[UDP_DATA+i] = *data++;
 	}
 	
+	UINT8 tmp = udpDoChecksum;
+	udpDoChecksum = UDP_CHECKSUM_OFF;
+	
 	udpMakeHeader(UDP_DEBUG, len);
+	
+	udpDoChecksum = tmp;
 	
 	enc28j60_sendPacket((UDP_OFFSET+len), packetBuffer, 0,0);
 }
@@ -520,6 +541,7 @@ void	udpMakeHeader(UINT8 index, UINT16 len)
 	
 	ip->protocol = IP_PR_UDP;
 	ip->length = HTONS(IP_HEADER_SIZE+UDP_HEADER_SIZE + len);
+	ipMakeHeader(settings.gateway);
 	
 	udp->checksum = udpChecksum(index);
 }

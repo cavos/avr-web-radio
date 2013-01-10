@@ -12,7 +12,7 @@
 
 
 volatile	UINT8	rtsp_status = RTSP_CLOSED;
-UINT8	rtsp_localport = 0;
+UINT16	rtsp_localport = 0;
 
 void	rtspClose()
 {

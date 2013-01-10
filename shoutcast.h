@@ -13,10 +13,10 @@
 
 // defines ----------------------------------------------------
 #define SHOUTCAST_SERVERPORT	(8000)
-#define SHOUTCAST_CLIENTPORT	(1011)
+#define SHOUTCAST_CLIENTPORT	(24001)
 
 #define SHOUTCAST_TIMEOUT		(5)
-#define SHOUTCAST_TRY			(3)
+#define SHOUTCAST_TRY			(0x03)
 
 // machine-states ----------------------------------------------
 #define SHOUTCAST_CLOSED		(1)
@@ -26,6 +26,8 @@
 #define SHOUTCAST_HEADER		(5)
 #define SHOUTCAST_ERROR			(129)
 #define SHOUTCAST_TIMEOUTERR	(130)
+
+#define SHOUTCAST_TEST			(3)
 
 // proto -------------------------------------------------------
 UINT8	shoutcastOpen(UINT8 item);
