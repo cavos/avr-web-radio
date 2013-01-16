@@ -19,7 +19,9 @@
 #define B7	0x80
 
 typedef unsigned char		UINT8;
+typedef	signed	 char		INT8;
 typedef unsigned int		UINT16;
+typedef	signed	 int		INT16;
 typedef	unsigned long		UINT32;
 
 #ifndef NULL

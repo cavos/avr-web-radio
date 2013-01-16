@@ -16,15 +16,15 @@
 #define ENC28J60_ENABLE()	PORTB &= ~B3
 
 /* VS1053 */
-//#define	VS_DREQ_CHECK()		( PIND & B3 ) /* 1 - can accept data */
-//#define VS_xCS_DISABLE()	PORTB |= B0
-//#define VS_xCS_ENABLE()		PORTB &= ~B0
-//#define	VS_xDCS_ENABLE()	PORTB |= B1
-//#define VS_xDCS_DISABLE()	PORTB |= ~B1
+#define VS_XCS_ENABLE()		(PORTD &= ~B0)
+#define VS_XCS_DISABLE()	(PORTD |= B0)
+#define VS_XDCS_ENABLE()	(PORTD &= ~B1)
+#define VS_XDCS_DISABLE()	(PORTD |= B1)
+#define VS_DREQ()			(PORTD &= B2)
 
-/* EEPROM */
-#define MCP23K_ENABLE()		PORTB &= ~B0
-#define MCP23K_DISABLE()	PORTB |= B0
+/* buffer */
+#define MCP23K_ENABLE()		(PORTB &= ~B0)
+#define MCP23K_DISABLE()	(PORTB |= B0)
 
 /* buttons */
 #define BUTTON_1			(PIND & B6)
