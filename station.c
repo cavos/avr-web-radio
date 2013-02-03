@@ -10,6 +10,7 @@
 #include <string.h>
 #include "rtsp.h"
 #include "shoutcast.h"
+#include "vs1053.h"
 
 UINT8	station_item;
 UINT8	station_status;
@@ -38,10 +39,12 @@ void	stationClose()
 {
 	if (station_status != STATION_CLOSED)
 	{
-		//shoutcast_close();
+		shoutcastClose();
 		//rtsp_close();
 		//vs_stop();
 		station_status = STATION_CLOSED;
+		
+		vsInitialize();
 	}
 }
 
@@ -79,6 +82,7 @@ UINT8	stationOpen(UINT8 item)
 void	stationService()
 {
 	//UINT16 len;
+	UINT8 dat[32];
 	
 	switch(station_status)
 	{
@@ -88,23 +92,23 @@ void	stationService()
 			if(fifoLength() < station_minBuf) // check buffer
 			{
 				station_status =STATION_BUFFERING;
-				//vsPause();
 			}
 			else
 			{
-				//while (/*vsBuffFree()*/ < 32) // przerzucanie zawartoœci bufora do vs
+				while((vsCheckDreq() != 0) && (fifoLength() >= 32))
 				{
-					
+					fifoPop(dat, 32);
+					vsData(dat);
 				}
-				//vsPlay();
 			}
 			break;
 			
 		case STATION_BUFFERING:
+		//LED_ON();
 			if (fifoLength() > station_playBuf)
 			{
 				station_status = STATION_OPENED;
-				//vsPlay();
+				LED_OFF();
 			}
 			if(station_timeouts >= STATION_TIMEOUT)
 			{
@@ -117,7 +121,6 @@ void	stationService()
 			if (fifoLength() > station_playBuf)
 			{
 				station_status = STATION_OPENED;
-				//vsPlay();
 			}
 			if (station_timeouts >= STATION_TIMEOUT)
 			{
@@ -158,11 +161,11 @@ void	stationAddr(UINT8 item, ipAddr *ip, UINT16 *port, char *url)
 			*port = 9000;
 			break;
 		case 2:
-			strcpy_P(url, PSTR("http://192.168.10.100"));
+			strcpy_P(url, PSTR("http://192.168.137.1"));
 			ip->b8[3] = 192;
 			ip->b8[2] = 168;
-			ip->b8[1] = 10;
-			ip->b8[0] = 100;
+			ip->b8[1] = 137;
+			ip->b8[0] = 1;
 			
 			*port = 8554;
 			break;

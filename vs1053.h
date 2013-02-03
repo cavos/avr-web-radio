@@ -23,6 +23,11 @@
 #define VS_DEF_TEBFREQ	(12000) // <1k-15k>Hz
 #define VS_DEF_TEBAMP	(0)		// <-8,7>dB
 
+//patch -------------------------------
+//#define VS_PATCH_WOFLAC (2095)
+//extern	const unsigned char atab[VS_PATCH_WOFLAC];
+//const unsigned short dtab[VS_PATCH_WOFLAC];
+
 
 // op commands -------------------------------------------------------------
 #define	VS_READOP	(0x03)
@@ -83,7 +88,7 @@
 #define VS_SCI_HDAT0		(0x08) // Stream header data 0
 	#define VS_HD0_BITRATE	(0xF000) // see bitrate table
 	#define VS_HD0_SAMPLER	(0x0C00) // 3 - reserved, 2 - 32/16/8 kHz, 1 - 48/24/12 kHz, 0 - 44/22/11 kHz
-	#define VS_HD0_BITRATE	(0x0200) // pad bit, 1 - additional slot, 0 - normal frame
+	#define VS_HD0_PADD		(0x0200) // pad bit, 1 - additional slot, 0 - normal frame
 	#define VS_HD0_MODE		(0x00C0) // 3 - mono, 2 - dual channel, 1 - joint stereo, 0 - stereo
 	#define VS_HD0_EXT		(0x0030) // see ISO 11172-3
 	#define VS_HD0_COPYRIG	(0x0008) // 1 - copyrighted, 0 - free
@@ -183,7 +188,7 @@ void	vsCancel();
 ///<summary>
 ///	Apply patch
 ///</summary>
-void	vsPatch();
+//void	vsPatch();
 
 ///<summary>
 /// Reset vs1053
@@ -214,5 +219,18 @@ void	vsWriteReg(UINT8 addr, UINT16 value);
 /// return 0 if low, 255 if high
 ///</summary>
 UINT8	vsCheckDreq();
+
+///<summary>
+/// Put series of zeros 
+/// UINT16 count - number of zeros
+///</summary>
+void	vsPutZeros(UINT16 count);
+
+///<summary>
+/// Sine test
+/// UINT8 FsS - see datasheet 9.12.1
+/// UINT16 length - duraton of test in ms
+///</summary>
+void	vsSineTest(UINT8 FsS, UINT16 length);
 
 #endif /* VS1053_H_ */

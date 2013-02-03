@@ -81,6 +81,7 @@ typedef	struct
 	UINT8	status;
 	UINT8	time;
 	UINT8	error;
+	UINT16	window;
 	//UINT16	(*appCall)(UINT8*, UINT16);
 } TCPtable;
 
@@ -102,10 +103,10 @@ typedef	struct
 }ARPtable;
 
 // ETHERTNET -------------------------------------------------
-#define ETH_OFFSET		0x00
-#define ETH_HEADER_SIZE	14
-#define	ETH_TYPE_IP		0x0800
-#define ETH_TYPE_ARP	0x0806
+#define ETH_OFFSET		(0x00)
+#define ETH_HEADER_SIZE	(14)
+#define	ETH_TYPE_IP		(0x0800)
+#define ETH_TYPE_ARP	(0x0806)
 
 typedef	struct  
 {
@@ -139,11 +140,11 @@ typedef struct
 #define ARP_REQUEST_LEN	42
 
 //	IP	------------------------------------------------------
-#define IP_OFFSET		0x0E
-#define IP_HEADER_SIZE	20
-#define IP_PR_ICMP		0x01
-#define IP_PR_TCP		0x06
-#define IP_PR_UDP		0x11
+#define IP_OFFSET		(0x0E)
+#define IP_HEADER_SIZE	(20)
+#define IP_PR_ICMP		(0x01)
+#define IP_PR_TCP		(0x06)
+#define IP_PR_UDP		(0x11)
 
 typedef struct
 {
@@ -209,9 +210,10 @@ typedef struct
 #define	TCP_S_FINISH	5
 
 // udp ------------------------------------------------------
-#define UDP_OFFSET		0x22
+#define UDP_OFFSET		(0x22)
+//#define UDP_OFFSET		(ETH_HEADER_SIZE+IP_HEADER_SIZE)
 #define UDP_HEADER_SIZE 8
-#define UDP_DATA		(ETH_HEADER_SIZE+IP_HEADER_SIZE+UDP_HEADER_SIZE)
+#define UDP_DATA		(0x2A)
 #define UDP_MAX_ENTRIES 5
 #define UDP_DEBUG		5
 
@@ -299,7 +301,7 @@ extern	void	tcpTimeService();
 /// UINT16 srcPort - local port
 /// return index of this connection in TCP table, MAX_TCP_ENTRY on error or table full
 ///</summary>
-extern	UINT8	tcpConnect(ipAddr targetIp, UINT16 dstPort, UINT16 srcPort);
+extern	UINT8	tcpConnect(ipAddr targetIp, UINT16 dstPort, UINT16 srcPort, UINT16 window);
 
 ///<summary>
 /// Listens to selected port and creates connection if SYN packet arrives

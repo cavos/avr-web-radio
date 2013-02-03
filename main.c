@@ -19,12 +19,14 @@
 #include "mcp23k256.h"
 #include "shoutcast.h"
 #include "station.h"
+#include "vs1053.h"
 
 
 UINT32	get_time(void);
 
 volatile	UINT32	time=0;
 volatile	UINT8	run_timeservice;
+UINT16	tmp;
 //static		UINT8	my_mac[6] = {0x00,0x55,0x58,0x10,0x50,0x11};
 //static		UINT8	my_mac[6] = {'x','R','A','D','I','O'};
 UINT8 a1[] = {0x48, 0x4F, 0x53, 0x54, 0x50, 0x43, 0x30, 0x52, 0x41, 0x44, 0x49, 0x4F, 0x08, 0x00, 0x45,
@@ -84,7 +86,10 @@ int main(void)
 	settings.mac.b8[5] = ENC28J60_MAC5;
 	settings.netmask.b32 = 0xFFFFFF00;
 	
-	LED_ON();
+	//VS_XCS_DISABLE();
+	
+	//LED_ON();
+	//LED_OFF();
 	
 	enc28j60_init();
 	
@@ -92,13 +97,21 @@ int main(void)
 	fifoInit();
 
 	_delay_ms(600);
+	LED_OFF();
 
+	//vsTest();
 	ethInit();
 	
+	vsInitialize();
+	stationInit();
+	//vsSineTest(126, 500);
+	//VS_XCS_DISABLE();
+	
 	sei();
+	//LED_OFF();
 	
 	//tcpConnect(settings.gateway, 8000, 24111);
-	stationOpen(SHOUTCAST_TEST);
+	//stationOpen(SHOUTCAST_TEST);
 	
 /************************************************************************/
 /* main loop                                                            */
@@ -108,10 +121,40 @@ int main(void)
         wdt_reset();
 		
 		ethService();
+		//stationService();
+		
+		//(vsCheckDreq())?LED_ON():LED_OFF();
+		
+		//(fifoLength() == 0)?LED_ON():LED_OFF();
+		
+		tmp = vsReadReg(VS_SCI_HDAT1);
+		
+		if (tmp >= 0xFFE0 && tmp <= 0xFFFF)
+		{
+			LED_ON();
+		}
+		
+		if (BUTTON_S4 == 0) // cancel play
+		{
+			_delay_ms(150); // contact bounce
+			
+			stationClose();
+		}
+		else if (BUTTON_S5 == 0)
+		{
+			_delay_ms(150);
+			
+			stationOpen(SHOUTCAST_TEST);
+		}
+		else if (BUTTON_S2 == 0)
+		{
+			_delay_ms(150);
+			fifoPop(a1, 84);
+		}
 	
 		if( run_timeservice )
 		{
-			////ethTimeService();
+			ethTimeService();
 			run_timeservice = 0x00;
 		}		
     }

@@ -40,7 +40,7 @@ void	tcpAbort(UINT8 index)
 	tcpTable[index].status = TCP_S_ABORT;
 }
 
-UINT8	tcpConnect(ipAddr targetIp, UINT16 dstPort, UINT16 srcPort)
+UINT8	tcpConnect(ipAddr targetIp, UINT16 dstPort, UINT16 srcPort, UINT16 window)
 {
 	UINT8	i;
 	
@@ -74,6 +74,7 @@ UINT8	tcpConnect(ipAddr targetIp, UINT16 dstPort, UINT16 srcPort)
 	tcpTable[i].status = TCP_S_OPEN;
 	tcpTable[i].time = 0;
 	tcpTable[i].error = 0;
+	tcpTable[i].window = window;
 	
 	tcpSend(i, 0);
 	//udpDbgSend(PSTR("TCP->Conn"), 9);
@@ -176,7 +177,7 @@ void	tcpSOpen(UINT8 index) // syn & ack
 		switch(HTONS(tcp->srcPort))
 		{
 			case SHOUTCAST_SERVERPORT:
-			LED_OFF();
+			//LED_OFF();
 				shoutcastTcpApp(index, &packetBuffer[TCP_DATA], len-TCP_HEADER_SIZE);
 				//tcpSend(index, 0);
 			break;
@@ -234,7 +235,7 @@ void	tcpSOpened(UINT8 index) //
 			//return;
 		//}
 		//len = tcpTable[index].appCall(&packetBuffer[TCP_DATA], len - TCP_HEADER_SIZE);
-		tcpSend(index,len);
+		//tcpSend(index,len);
 	}
 }
 
@@ -352,7 +353,7 @@ UINT16	tcpChecksum(UINT8 index, UINT16 datalength)
 		if (sum & 0x80000000)
 		{
 			sum = (sum&0xFFFF)+(sum>>16);
-			LED_ON();
+			//LED_ON();
 		}			
 		data += 2; // move pointer
 	}
@@ -462,26 +463,27 @@ void	tcpMakeHeader(UINT8 index, UINT16 len)
 	tcp->length = TCP_HEADER_SIZE<<2;
 	tcp->flags = tcpTable[index].flags;
 	
-	UINT16 f;
-	f= fifoFree();
+	//UINT16 f;
+	//f= fifoFree();
+	//
+	//if (f > 4096)
+	//{
+		//tcp->window = HTONS(2048);
+	//}
+	//else if (f > 2048)
+	//{
+		//tcp->window = HTONS(1024);
+	//}
+	//else if (f > 512)
+	//{
+		//tcp->window = HTONS(512);
+	//}
+	//else
+	//{
+		//tcp->window = HTONS(256);
+	//}
 	
-	if (f > 4096)
-	{
-		tcp->window = HTONS(2048);
-	}
-	else if (f > 2048)
-	{
-		tcp->window = HTONS(1024);
-	}
-	else if (f > 512)
-	{
-		tcp->window = HTONS(512);
-	}
-	else
-	{
-		tcp->window = HTONS(256);
-	}
-	
+	tcp->window = tcpTable[index].window;
 	tcp->checksum = 0;
 	tcp->urgentPtr = 0;
 	
