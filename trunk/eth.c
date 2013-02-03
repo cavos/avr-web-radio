@@ -13,6 +13,7 @@
 #include "enc28j60.h"
 #include <util/delay.h>
 #include <avr/wdt.h>
+#include "fifo.h"
 
 UINT8		packetBuffer[MTU_SIZE+1];
 ETH_HEADER	*eth = (ETH_HEADER*)&packetBuffer[ETH_OFFSET];
@@ -31,13 +32,13 @@ UINT16	htons(const UINT16 val)
 void	ethService()
 {
 	UINT16 length;
+	//UINT8 l = 0;
 	
 	wdt_reset();
 	
 	length = enc28j60_receivePacket(MTU_SIZE, packetBuffer, NULL);
-	if (length < 0)
+	if (length <= 0)
 	{
-		
 		return;
 	}
 	// check packet type
@@ -62,7 +63,7 @@ void	ethService()
 				}
 				else if (ip->protocol == IP_PR_UDP)
 				{
-					//udpService();
+					////udpService();
 				}
 			}
 		}

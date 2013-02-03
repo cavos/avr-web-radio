@@ -38,7 +38,7 @@ extern	UINT16	station_hiBuf;
 
 // proto -------------------------------------------
 extern	void	stationInit();
-extern	void	staionClose();
+extern	void	stationClose();
 extern	UINT8	stationOpen(UINT8 item);
 extern	void	stationService();
 extern	void	stationName(UINT8 item, UINT8 *n);

@@ -49,7 +49,7 @@ UINT16	rtspOpen(UINT8 item)
 	rtsp_localport = RTSP_CLIENTPORT;
 	
 	stationAddr(item, &ip, &port, addr);
-	index = tcpConnect(ip, port, rtsp_localport);
+	index = tcpConnect(ip, port, rtsp_localport, 2048);
 	timeout = get_time() + RTSP_TIMEOUT;
 	trying = RTSP_TRIES;
 	
@@ -71,7 +71,7 @@ UINT16	rtspOpen(UINT8 item)
 			if(--trying)
 			{
 				rtsp_status =RTSP_OPEN;
-				index = tcpConnect(ip, port, rtsp_localport);
+				index = tcpConnect(ip, port, rtsp_localport, 2048);
 			}
 			else
 			{

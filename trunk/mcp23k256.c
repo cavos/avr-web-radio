@@ -3,10 +3,12 @@
  *
  *  Author: Krzysztof Kwiecinski
  */
-#include <avr/io.h> 
+#include <avr/io.h>
+#include <avr/interrupt.h> 
+#include <avr/wdt.h>
 #include "mcp23k256.h"
 
-UINT16	dat = 0;
+volatile	static UINT16	dat = 0;
 
 void	mcp23kInit()
 {
@@ -16,34 +18,47 @@ void	mcp23kInit()
 	spi_write(MCP23K_WR_SEQUENTIAL); // sequential write mode
 	
 	MCP23K_DISABLE();
+	
+	dat = 0;
 }
 
 UINT16	mcp23kWrite(UINT16 addr, UINT8 *data, UINT16 len)
 {
-	if ((addr > MCP23K_SIZE) || (mcp23kFree() == 0))
+	if ((addr > MCP23K_SIZE) /*|| (mcp23kFree() == 0)*/)
 	{
+		LED_ON();
 		return 0;
 	}
 	
-	UINT8 i;
+	//UINT16 i=0;
 	
-	if (mcp23kFree() < len)
-	{
-		len = mcp23kFree();
-	}
-	
+	//if (mcp23kFree() < len)
+	//{
+		//len = mcp23kFree();
+	//}
+
 	MCP23K_ENABLE();
 	
 	spi_write(MCP23K_WRITE);
 	spi_write(addr>>8);
 	spi_write(addr&0xFF);
-	for (i = 0x00; i < len; i++)
+	wdt_reset();
+	//for (i = 0x0000; i < len; i++)
+	//{
+		//spi_write(*data);
+		//LED_ON();
+		//data++;
+	//}
+	while(len--)
 	{
-		spi_write(*data);
-		data++;
+		// write data
+		SPDR = *data++;
+		wait_spi();
 	}
 	
+	
 	MCP23K_DISABLE();
+
 	
 	dat += len;
 	
@@ -52,12 +67,12 @@ UINT16	mcp23kWrite(UINT16 addr, UINT8 *data, UINT16 len)
 
 UINT16	mcp23kRead(UINT16 addr, UINT8 *data, UINT16 len)
 {
-	if ((addr > MCP23K_SIZE) || (mcp23kUsed() == 0))
+	if ((addr > MCP23K_SIZE) /*|| (mcp23kUsed() == 0)*/)
 	{
 		return 0;
 	}
 	
-	UINT8 i;
+	UINT16 l2 = 0x00;
 	
 	if (len > mcp23kUsed() || mcp23kUsed() == 0x0000)
 	{
@@ -69,17 +84,28 @@ UINT16	mcp23kRead(UINT16 addr, UINT8 *data, UINT16 len)
 	spi_write(MCP23K_READ);
 	spi_write(addr>>8);
 	spi_write(addr&0xFF);
-	for (i = 0x00; i < len; i++)
+	//for (i = 0x00; i < len; i++)
+	//{
+		//LED_ON();
+		//*data = spi_read();
+		//data++;
+	//}
+	
+	while(len--)
 	{
-		*data = spi_read();
-		data++;
+		// read data
+		
+		SPDR = 0xFF;
+		l2++;
+		wait_spi();
+		*data++ = SPDR;
 	}
 	
 	MCP23K_DISABLE();
 	
-	dat -= len;
+	dat -= l2;
 	
-	return len;
+	return l2;
 }
 
 UINT16	mcp23kFree()

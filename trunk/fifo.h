@@ -11,6 +11,9 @@
 ///</TODO>
 #ifndef FIFO_H_
 #define FIFO_H_
+#include "mcp23k256.h"
+
+#define FIFO_SIZE	(MCP23K_SIZE)
 
 /* prototypes */
 ///<summary>

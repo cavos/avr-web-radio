@@ -11,23 +11,23 @@
 #include "main.h"
 #include "types.h"
 
-#define MCP23K_SIZE	0x8000
+#define MCP23K_SIZE		(0x8000)
 
 // instruction set ------------------------------
-#define MCP23K_READ		0x03	/* read data form memory array beginning at selected address */
-#define MCP23K_WRITE	0x02	/* write data to memory array beginning at selected address*/
-#define MCP23K_RDSR		0x05	/* read STATUS register */
-#define MCP23K_WRSR		0x01	/* write STATUS register*/
+#define MCP23K_READ		(0x03)	/* read data form memory array beginning at selected address */
+#define MCP23K_WRITE	(0x02)	/* write data to memory array beginning at selected address*/
+#define MCP23K_RDSR		(0x05)	/* read STATUS register */
+#define MCP23K_WRSR		(0x01)	/* write STATUS register*/
 
 // status register ------------------------------
-#define MCP23K_MODE1	0x80
-#define MCP23K_MODE0	0x40
-#define MCP23K_HOLD		0x01
+#define MCP23K_MODE1	(0x80)
+#define MCP23K_MODE0	(0x40)
+#define MCP23K_HOLD		(0x01)
 
 // write modes ----------------------------------
-#define MCP23K_WR_BYTE			0x01
-#define MCP23K_WR_PAGE			0x81
-#define MCP23K_WR_SEQUENTIAL	0x41
+#define MCP23K_WR_BYTE			(0x01)
+#define MCP23K_WR_PAGE			(0x81)
+#define MCP23K_WR_SEQUENTIAL	(0x41)
 
 // proto ----------------------------------------
 ///<summary>

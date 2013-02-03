@@ -34,5 +34,7 @@ UINT8	shoutcastOpen(UINT8 item);
 void	shoutcastClose();
 void	shoutcastData(UINT8 *data, UINT16 len);
 void	shoutcastTcpApp(UINT8 index, UINT8 *data, UINT16 len);
+void	shoutcastBuffer(UINT8 *data, UINT16 len);
+void	shoutcastPlay();
 
 #endif /* SHOUTCAST_H_ */
