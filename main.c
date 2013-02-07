@@ -155,7 +155,7 @@ int main(void)
 	
 		if( run_timeservice )
 		{
-			ethTimeService();
+			//ethTimeService();
 			run_timeservice = 0x00;
 		}		
     }

@@ -35,7 +35,7 @@ void	ipMakeHeader(ipAddr targetIp)
 	ip->targetIP.b32 = HTONS32(targetIp.b32);
 	ip->sourceIP.b32 = HTONS32(settings.ipaddr.b32);
 	
-	ip->checksum = HTONS(ipChecksum());
+	ip->checksum = ipChecksum();
 }
 
 void	arpTimeService()

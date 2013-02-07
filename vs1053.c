@@ -728,7 +728,8 @@ void	vsSineTest(UINT8 FsS, UINT16 length)
 	vsPutZeros(4);
 	VS_XDCS_DISABLE();
 	
-	_delay_ms(length);
+	//TODO: _delay_ms must have constant parameter!
+	//_delay_ms(length);
 	
 	VS_XDCS_ENABLE();
 	spi_write(0x45);

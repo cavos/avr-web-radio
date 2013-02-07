@@ -227,7 +227,7 @@ void	shoutcastData(UINT8 *data, UINT16 len)
 
 void	shoutcastBuffer(UINT8 *data, UINT16 len)
 {
-	UINT16	bufLen = 128; // send received data to buffer
+	UINT16	bufLen = 384; // send received data to buffer
 	UINT16 tmp = 0x00;
 	
 	while(len)
