@@ -24,45 +24,30 @@ void	mcp23kInit()
 
 UINT16	mcp23kWrite(UINT16 addr, UINT8 *data, UINT16 len)
 {
-	if ((addr > MCP23K_SIZE) /*|| (mcp23kFree() == 0)*/)
+	if ((addr > MCP23K_SIZE))
 	{
-		LED_ON();
 		return 0;
 	}
-	
-	//UINT16 i=0;
-	
-	//if (mcp23kFree() < len)
-	//{
-		//len = mcp23kFree();
-	//}
-
+	UINT16 l2 = 0x0000;
 	MCP23K_ENABLE();
 	
 	spi_write(MCP23K_WRITE);
 	spi_write(addr>>8);
 	spi_write(addr&0xFF);
 	wdt_reset();
-	//for (i = 0x0000; i < len; i++)
-	//{
-		//spi_write(*data);
-		//LED_ON();
-		//data++;
-	//}
 	while(len--)
 	{
 		// write data
 		SPDR = *data++;
+		l2++;
 		wait_spi();
 	}
 	
-	
 	MCP23K_DISABLE();
 
+	dat += l2;
 	
-	dat += len;
-	
-	return len;
+	return l2;
 }
 
 UINT16	mcp23kRead(UINT16 addr, UINT8 *data, UINT16 len)
@@ -74,27 +59,14 @@ UINT16	mcp23kRead(UINT16 addr, UINT8 *data, UINT16 len)
 	
 	UINT16 l2 = 0x00;
 	
-	if (len > mcp23kUsed() || mcp23kUsed() == 0x0000)
-	{
-		len = mcp23kUsed();
-	}
-	
 	MCP23K_ENABLE();
 	
 	spi_write(MCP23K_READ);
 	spi_write(addr>>8);
 	spi_write(addr&0xFF);
-	//for (i = 0x00; i < len; i++)
-	//{
-		//LED_ON();
-		//*data = spi_read();
-		//data++;
-	//}
 	
-	while(len--)
+	while(len--)// read data
 	{
-		// read data
-		
 		SPDR = 0xFF;
 		l2++;
 		wait_spi();

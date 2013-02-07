@@ -105,6 +105,11 @@ void	ethInit()
 	//ethArp();
 	UINT8 j;
 	
+	for (j = 0; j < MAX_TCP_ENTRY; j++)
+	{
+		tcpTable[j].status = TCP_S_CLOSED;
+	}
+	
 	while(1)
 	{
 		
@@ -147,8 +152,7 @@ void	ethInit()
 void	ethTimeService()
 {
 	arpTimeService();
-	tcpTimeService();
-	
+	//tcpTimeService();
 }
 
 UINT16	ipChecksum()

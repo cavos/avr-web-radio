@@ -34,7 +34,7 @@ extern	UINT8	station_timeouts;
 extern	UINT8	station_try;
 extern	UINT16	station_minBuf;
 extern	UINT16	station_playBuf;
-extern	UINT16	station_hiBuf;
+//extern	UINT16	station_hiBuf;
 
 // proto -------------------------------------------
 extern	void	stationInit();

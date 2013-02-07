@@ -41,7 +41,7 @@
 #endif
 
 #ifndef MTU_SIZE
-#define MTU_SIZE			1200
+#define MTU_SIZE			1300
 #endif
 
 // union uesd to store MAC address, can be accessed either as 8- or 16bit array
