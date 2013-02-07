@@ -12,6 +12,7 @@
 #include "fifo.h"
 #include "main.h"
 #include "vs1053.h"
+#include <avr/wdt.h>
 
 volatile UINT8	shout_status = SHOUTCAST_CLOSED;
 UINT16	shout_localport = 0;
@@ -22,9 +23,6 @@ UINT8	shout_tcpIndex = 0;
 UINT16	shout_playBuf = 0x4000;
 UINT16	shout_minBuf = 0x0080;
 UINT8	shout_playing = 0;
-
-UINT16 bufTMP;
-
 
 UINT8	shoutcastOpen(UINT8 item)
 {
@@ -42,9 +40,6 @@ UINT8	shoutcastOpen(UINT8 item)
 	timeout = get_time()+SHOUTCAST_TIMEOUT;
 	tries = SHOUTCAST_TRY;
 	
-	//udpDbgSend(PSTR("Shout->Open"), 11);
-	bufTMP = fifoFree();
-	
 	while(1)
 	{
 		ethService();
@@ -56,6 +51,7 @@ UINT8	shoutcastOpen(UINT8 item)
 			(status == SHOUTCAST_ERROR))
 		{
 			shout_tcpIndex = index;
+			shout_status = status;
 			break;
 		}
 		
@@ -77,10 +73,9 @@ UINT8	shoutcastOpen(UINT8 item)
 			}
 		}
 		
-		if (shout_status == SHOUTCAST_OPENED)
+		if (shout_status == SHOUTCAST_OPEN)
 		{
-			//udpDbgSend(PSTR("Shout->Opened"),13);
-			return SHOUTCAST_OPENED;
+			return STATION_OPEN;//SHOUTCAST_OPENED;
 		}
 	}
 	
@@ -113,8 +108,6 @@ void	shoutcastClose()
 void	shoutcastTcpApp(UINT8 index, UINT8 *data, UINT16 len)
 {
 	UINT16 txlen;
-	//UINT8 i;
-	//char buffer[32];
 	
 	switch(shout_status)
 	{
@@ -134,8 +127,6 @@ void	shoutcastTcpApp(UINT8 index, UINT8 *data, UINT16 len)
 			
 			shout_tcpIndex = index;
 			tcpSend(index, txlen);
-			//LED_OFF();
-			//udpDbgSend(PSTR("Shout->Sent open msg"), 20);
 		break;
 		
 		case SHOUTCAST_HEADER:
@@ -148,20 +139,20 @@ void	shoutcastTcpApp(UINT8 index, UINT8 *data, UINT16 len)
 			
 			shoutcastBuffer(data, len);
 			
-			if (shout_minBuf >= fifoLength())
-			{
-				shout_playing = 0;
-			}
-			else if (shout_playBuf <= fifoLength())
-			{
-				shout_playing = 1;
-			}
-			
-			if (shout_playing)
-			{
+			//if (shout_minBuf >= fifoLength())
+			//{
+				//shout_playing = 0;
+			//}
+			//else if (shout_playBuf <= fifoLength())
+			//{
+				//shout_playing = 1;
+			//}
+			//
+			//if (shout_playing)
+			//{
 				//LED_TOGGLE();
-				shoutcastPlay();
-			}
+				//shoutcastPlay();
+			//}
 			
 			//tcpSend(index, 0); // ACK
 		break;
@@ -177,54 +168,6 @@ void	shoutcastTcpApp(UINT8 index, UINT8 *data, UINT16 len)
 		break;
 	}
 }
-
-//void	shoutcastData(UINT8 *data, UINT16 len)
-//{
-	//UINT16	bufLen;
-	//UINT8	d[32];
-	//
-	//
-	//while(len)
-	//{
-		//bufLen = fifoLength();
-		//while(vsCheckDreq())
-		//{
-			//fifoPop(d, 32);
-			////vs put data
-		//}
-		//
-		//bufLen = fifoFree();
-		//if (bufLen < len) // not enough space
-		//{
-			//fifoPut(data, bufLen);
-			//len -= bufLen;
-		//}
-		//else
-		//{
-			//fifoPut(data,len);
-			//len = 0;
-		//}
-	//}
-	//
-	//bufLen = fifoFree();
-	//
-	//if(bufLen > 4096)
-	//{
-		//tcpTable[shout_tcpIndex].window = HTONS(2048);
-	//}
-	//else if (bufLen > 2048)
-	//{
-		//tcpTable[shout_tcpIndex].window = HTONS(1024);
-	//}
-	//else if (bufLen > 1024)
-	//{
-		//tcpTable[shout_tcpIndex].window = HTONS(512);
-	//}
-	//else
-	//{
-		//tcpTable[shout_tcpIndex].window = HTONS(128);
-	//}
-//}
 
 void	shoutcastData(UINT8 *data, UINT16 len)
 {
@@ -284,12 +227,55 @@ void	shoutcastData(UINT8 *data, UINT16 len)
 
 void	shoutcastBuffer(UINT8 *data, UINT16 len)
 {
-	UINT16	bufLen = fifoFree(); // send received data to buffer
+	UINT16	bufLen = 128; // send received data to buffer
+	UINT16 tmp = 0x00;
 	
-	bufLen = (bufLen>len)?len:bufLen;
-	fifoPut(data, bufLen);
+	while(len)
+	{
+		//shout_buffer[tmp++] = *data++;
+		//len--;
+		
+		//if (fifoFree() >= bufLen)
+		//{
+			////LED_ON();
+			//if (len > bufLen)
+			//{
+				//wdt_reset();
+				//fifoPut(data, bufLen);
+				//data += bufLen;
+				//len -= bufLen;
+			//}
+			//else if (len > 0)
+			//{
+				//wdt_reset();
+				//fifoPut(data, len);
+				//len = 0;
+			//}
+		//}
+		
+		bufLen =  fifoPut(data, len);
+		len = len - bufLen;
+		stationService();	
+	}
 	
-	tcpTable[shout_tcpIndex].window = HTONS(fifoFree()+2);
+	bufLen = fifoFree();
+	
+	if(bufLen > 8192)
+	{
+		tcpTable[shout_tcpIndex].window = HTONS(4096);
+	}
+	else if (bufLen > 2048)
+	{
+		tcpTable[shout_tcpIndex].window = HTONS(1024);
+	}
+	else if (bufLen > 1024)
+	{
+		tcpTable[shout_tcpIndex].window = HTONS(512);
+	}
+	else
+	{
+		tcpTable[shout_tcpIndex].window = HTONS(256);
+	}
 }
 
 void	shoutcastPlay()

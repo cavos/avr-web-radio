@@ -233,4 +233,6 @@ void	vsPutZeros(UINT16 count);
 ///</summary>
 void	vsSineTest(UINT8 FsS, UINT16 length);
 
+extern unsigned char peer1_1[];
+
 #endif /* VS1053_H_ */

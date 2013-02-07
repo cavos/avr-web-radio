@@ -222,7 +222,6 @@ void	icmpService(/*ipAddr dstIp, UINT8 type*/)
 		ip->protocol = IP_PR_ICMP;
 		ip->sourceIP.b32 = HTONS32(ip->sourceIP.b32);
 		ipMakeHeader(ip->sourceIP); // error probability with copying ip addr!
-		// TODO: checksum!!!
 		icmp->type = 0;
 		icmp->code = 0;
 		tmp = HTONS(icmp->checksum); // only the type is changed 

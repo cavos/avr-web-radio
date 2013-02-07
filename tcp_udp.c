@@ -182,9 +182,6 @@ void	tcpSOpen(UINT8 index) // syn & ack
 				//tcpSend(index, 0);
 			break;
 		}
-		//len = tcpTable[index].appCall(&packetBuffer[TCP_DATA], 0);
-		tcpSend(index,len);
-		//udpDbgSend(PSTR("TCP->Opened"),11);
 	}
 	else  // abort
 	{
@@ -203,8 +200,9 @@ void	tcpSOpened(UINT8 index) //
 	} 
 	else if(tcp->flags&TCP_FLAG_FIN)
 	{
+		UINT16 len = HTONS(ip->length) - (IP_HEADER_SIZE +(tcp->length>>2));
 		tcpTable[index].seqnum = HTONS32(tcp->ackNum);
-		tcpTable[index].acknum = HTONS32(tcp->seqNum) + 1;
+		tcpTable[index].acknum = HTONS32(tcp->seqNum) + len + 1;
 		tcpTable[index].flags = TCP_FLAG_FIN | TCP_FLAG_ACK;
 		tcpTable[index].status = TCP_S_FINISH;
 		tcpSend(index,0);
@@ -213,8 +211,23 @@ void	tcpSOpened(UINT8 index) //
 	{
 		if(HTONS32(tcp->seqNum) != tcpTable[index].acknum) // frame lost
 		{
-			tcpSend(index,0); // transmit last packet
-			return;
+			
+			if(HTONS32(tcp->seqNum) < tcpTable[index].acknum) // dup frame
+			{
+				UINT16 len = HTONS(ip->length) - (IP_HEADER_SIZE +(tcp->length>>2));
+				UINT32 ack;
+				ack = tcpTable[index].acknum;
+				tcpTable[index].acknum = HTONS32(tcp->seqNum) + len;
+				tcpTable[index].flags = TCP_FLAG_ACK;
+				tcpSend(index,0);
+				tcpTable[index].acknum = ack;
+				return;
+			}
+			else
+			{
+				tcpSend(index,0); // transmit last packet
+				return;	
+			}
 		}
 		
 		UINT16 len = HTONS(ip->length) - (IP_HEADER_SIZE +(tcp->length>>2));
@@ -224,18 +237,11 @@ void	tcpSOpened(UINT8 index) //
 		switch(HTONS(tcp->srcPort))
 		{
 			case SHOUTCAST_SERVERPORT: // station
+				tcpSend(index,0);
 				shoutcastTcpApp(index, &packetBuffer[TCP_DATA], len);
 				len = 0;
-				tcpSend(index,len);
 			break;
 		}
-		
-		//if (tcpTable[index].appCall == NULL)
-		//{
-			//return;
-		//}
-		//len = tcpTable[index].appCall(&packetBuffer[TCP_DATA], len - TCP_HEADER_SIZE);
-		//tcpSend(index,len);
 	}
 }
 

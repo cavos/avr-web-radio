@@ -26,7 +26,7 @@ void	fifoInit( void );
 /// UINT8 *b - pointer to data
 /// UINT16 len - length of data
 ///</summary>
-void	fifoPut( UINT8 *b, UINT16 len );
+UINT16	fifoPut( UINT8 *b, UINT16 len );
 
 ///<summary>
 /// Retrieves data from queue 
@@ -34,7 +34,7 @@ void	fifoPut( UINT8 *b, UINT16 len );
 /// UINT16 len - length of data
 /// returns amount of data read
 ///</summary>
-UINT8	fifoPop( UINT8 *b, UINT8 len );
+UINT16	fifoPop( UINT8 *b, UINT16 len );
 
 ///<summary>
 /// Calculates amount of free memory in queue
@@ -47,5 +47,7 @@ UINT16	fifoFree(void);
 /// returns length of queue (amount of data bufered)
 ///</summary>
 UINT16	fifoLength(void);
+
+UINT16	fifoSize();
 
 #endif /* FIFO_H_ */

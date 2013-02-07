@@ -26,17 +26,10 @@ UINT32	get_time(void);
 
 volatile	UINT32	time=0;
 volatile	UINT8	run_timeservice;
-UINT16	tmp;
-//static		UINT8	my_mac[6] = {0x00,0x55,0x58,0x10,0x50,0x11};
-//static		UINT8	my_mac[6] = {'x','R','A','D','I','O'};
-UINT8 a1[] = {0x48, 0x4F, 0x53, 0x54, 0x50, 0x43, 0x30, 0x52, 0x41, 0x44, 0x49, 0x4F, 0x08, 0x00, 0x45,
-			  0x00, 0x00, 0x2E, 0x00, 0x00, 0x40, 0x00, 0x40, 0x11, 0x0A, 0xB9, 0x98, 0x00, 0x00, 0x04,
-			  0x98, 0x00, 0x00, 0x02, 0x10, 0x00, 0x20, 0x00, 0x00, 0x1A, 0xCF, 0xB3, 0xD0, 0x00, 0x44,
-			  0x55, 0x50, 0x41, 0x20, 0x49, 0x4E, 0x4F, 0x20, 0x44, 0x55, 0x50, 0x41, 0x20, 0x54, 0x45,
-			  0x53, 0x54, 0x20, 0x50, 0x41, 0x43, 0x4B, 0x45, 0x54, 0x00};
-UINT8 au[300];
-			  
+UINT16	tmp;  
 device	settings;
+
+UINT8 dupa[536];
 
 int main(void)
 {
@@ -99,19 +92,17 @@ int main(void)
 	_delay_ms(600);
 	LED_OFF();
 
-	//vsTest();
 	ethInit();
 	
 	vsInitialize();
 	stationInit();
-	//vsSineTest(126, 500);
-	//VS_XCS_DISABLE();
-	
 	sei();
-	//LED_OFF();
 	
-	//tcpConnect(settings.gateway, 8000, 24111);
-	//stationOpen(SHOUTCAST_TEST);
+	
+	//fifoPut(dupa, 512);
+	//fifoPut(dupa, 512);
+	//if(fifoLength() > (fifoSize()/2)){ LED_ON();}
+	
 	
 /************************************************************************/
 /* main loop                                                            */
@@ -121,18 +112,16 @@ int main(void)
         wdt_reset();
 		
 		ethService();
-		//stationService();
+		stationService();
 		
-		//(vsCheckDreq())?LED_ON():LED_OFF();
-		
-		//(fifoLength() == 0)?LED_ON():LED_OFF();
-		
-		tmp = vsReadReg(VS_SCI_HDAT1);
-		
-		if (tmp >= 0xFFE0 && tmp <= 0xFFFF)
-		{
-			LED_ON();
-		}
+		//if (fifoLength() < station_minBuf)
+		//{
+			//LED_ON();
+		//}
+		//if (fifoLength() > station_playBuf)
+		//{
+			//LED_OFF();
+		//}
 		
 		if (BUTTON_S4 == 0) // cancel play
 		{
@@ -149,7 +138,19 @@ int main(void)
 		else if (BUTTON_S2 == 0)
 		{
 			_delay_ms(150);
-			fifoPop(a1, 84);
+			//LED_ON();
+			fifoPut(dupa, 536);
+			//PORTA = fifoLength()&0xFF;
+			//PORTC = fifoLength()>>8;
+			//LED_OFF();
+		}
+		else if (BUTTON_S3 == 0)
+		{
+			_delay_ms(150);
+			
+			((fifoPop(dupa, 512)) == 0)?LED_ON():LED_OFF();
+			//PORTA = fifoLength()&0xFF;
+			//PORTC = fifoLength()>>8;
 		}
 	
 		if( run_timeservice )

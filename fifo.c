@@ -10,6 +10,7 @@
 #include "fifo.h"
 #include "mcp23k256.h"
 #include <avr/io.h>
+#include <avr/interrupt.h>
 
 UINT16	fifo_head;
 UINT16	fifo_tail;
@@ -20,19 +21,28 @@ void	fifoInit(void)
 	fifo_head = 0x0000;
 }
 
-void	fifoPut( UINT8* b, UINT16 len )
+UINT16	fifoPut( UINT8* b, UINT16 len )
 {
-	len = mcp23kWrite(fifo_head, b, len);
-	//LED_TOGGLE();
+	if (fifoFree() < len)
+	{
+		len = fifoFree();
+	}
+	mcp23kWrite(fifo_head, b, len);
 	
 	fifo_head = fifo_head + len;
 	fifo_head = fifo_head&(MCP23K_SIZE-1);
+	
+	return len;
 }
 
-UINT8	fifoPop( UINT8* b, UINT8 len )
+UINT16	fifoPop( UINT8* b, UINT16 len )
 {
+	if (fifoLength() < len)
+	{
+		return 0;
+	}
+	
 	len = mcp23kRead(fifo_tail, b, len);
-	//LED_TOGGLE();
 	fifo_tail = fifo_tail + len;
 	fifo_tail = fifo_tail&(MCP23K_SIZE-1);
 	
@@ -45,19 +55,18 @@ UINT16	fifoFree()
 	
 	if ( fifo_head > fifo_tail)
 	{
-		free = MCP23K_SIZE - (fifo_head - fifo_tail);
+		free = (MCP23K_SIZE - (fifo_head - fifo_tail))-1;
 	}
 	else if (fifo_head < fifo_tail)
 	{
-		free = fifo_tail - fifo_head;
+		free = (fifo_tail - fifo_head)-1;
 	}
 	else
 	{
-		free = MCP23K_SIZE;
+		free = (MCP23K_SIZE - 1);
 	}
 	
-	return free-1;
-	//return mcp23kFree();
+	return free;
 }
 
 UINT16 fifoLength()
@@ -70,7 +79,7 @@ UINT16 fifoLength()
 	}
 	else if (fifo_head < fifo_tail)
 	{
-		buffer = MCP23K_SIZE - (fifo_tail-fifo_head);
+		buffer = (MCP23K_SIZE - (fifo_tail-fifo_head));
 	}
 	else
 	{
@@ -78,5 +87,9 @@ UINT16 fifoLength()
 	}
 	
 	return buffer;
-	//return mcp23kUsed();
+}
+
+UINT16	fifoSize()
+{
+	return FIFO_SIZE;
 }

@@ -5,6 +5,7 @@
  *  Author: krzychu
  */ 
 #include <avr/pgmspace.h>
+#include <avr/wdt.h>
 #include "station.h"
 #include "fifo.h"
 #include <string.h>
@@ -20,19 +21,22 @@ UINT16	station_minBuf;
 UINT16	station_playBuf;
 UINT16	station_hiBuf;
 
+//UINT8	tmpBuffer[1024];
+//UINT16	buffindex = 0x00;
+
 
 void	stationInit()
 {
-	UINT32 tmp = fifoFree();
+	UINT16 tmp = fifoSize();
 	
 	station_item = 0;
 	station_status = STATION_CLOSED;
 	station_timeouts = 0;
 	station_try = STATION_RETRIES;
 	
-	station_minBuf = (tmp*10)/100; // 10% buffer, revert into buffer mode
-	station_playBuf = (tmp*50)/100; // 50% buffer, play mode
-	station_hiBuf = (tmp*75)/100; // 75% buffer, 
+	station_minBuf = 0x00FF;//tmp/10; // 10% buffer, revert into buffer mode
+	station_playBuf = 0x4000; // 50% buffer, play mode
+	station_hiBuf = 0x6800; // 75% buffer, 
 }
 
 void	stationClose()
@@ -40,8 +44,6 @@ void	stationClose()
 	if (station_status != STATION_CLOSED)
 	{
 		shoutcastClose();
-		//rtsp_close();
-		//vs_stop();
 		station_status = STATION_CLOSED;
 		
 		vsInitialize();
@@ -68,12 +70,13 @@ UINT8	stationOpen(UINT8 item)
 	}
 	else if(proto == PROTO_RTSP)
 	{
-		r = rtspOpen(item);
+//		r = rtspOpen(item);
 	}
 	
-	if (r == STATION_OPENED)
+	if (r == SHOUTCAST_OPEN)
 	{
 		station_timeouts = 0;
+		station_status = STATION_OPEN;
 	}
 	
 	return r;
@@ -81,55 +84,53 @@ UINT8	stationOpen(UINT8 item)
 
 void	stationService()
 {
-	//UINT16 len;
+	UINT16 len = 0x00;
 	UINT8 dat[32];
 	
 	switch(station_status)
 	{
 		case STATION_OPENED:
+			wdt_reset();
 			station_timeouts = 0;
+			//LED_ON();
 			
 			if(fifoLength() < station_minBuf) // check buffer
 			{
 				station_status =STATION_BUFFERING;
 			}
 			else
-			{
-				while((vsCheckDreq() != 0) && (fifoLength() >= 32))
+			{				
+				while((vsCheckDreq() != 0) && len < 512)
 				{
-					fifoPop(dat, 32);
+					if ((fifoPop(dat, 32)) == 0)
+					{
+						//LED_ON();
+						break;
+					}
+					LED_OFF();
 					vsData(dat);
+					len+=32;
 				}
 			}
 			break;
 			
 		case STATION_BUFFERING:
-		//LED_ON();
+		LED_OFF();
+			//(bufTMP == 0)?LED_ON():LED_OFF();
+		//
+			//fifoPut(shout_buffer, len);
+			//len = 0;
+			
 			if (fifoLength() > station_playBuf)
 			{
 				station_status = STATION_OPENED;
-				LED_OFF();
-			}
-			if(station_timeouts >= STATION_TIMEOUT)
-			{
-				stationClose();
-				station_status = STATION_OPEN;
 			}
 			break;
 			
 		case STATION_OPEN:
-			if (fifoLength() > station_playBuf)
+			if (fifoLength() > station_hiBuf)
 			{
 				station_status = STATION_OPENED;
-			}
-			if (station_timeouts >= STATION_TIMEOUT)
-			{
-				stationClose();
-				if (station_try)
-				{
-					station_try--;
-					stationOpen(station_item);
-				}
 			}
 			break;
 			
