@@ -161,23 +161,40 @@ UINT16	ipChecksum()
 	UINT16	result16 = 0;
 	UINT16	tmp = (ip->ver_len)<<8;
 	
-	sum32 = sum32 + tmp + ip->tos;
-	sum32 = sum32 + HTONS(ip->length);
-	sum32 = sum32 + HTONS(ip->flags_offset);
-	tmp = (ip->ttl)<<8;
-	sum32 = sum32 + tmp + ip->protocol;
-	sum32 = sum32 + ((HTONS32(ip->sourceIP.b32))>>16); // msb
-	sum32 = sum32 + ((HTONS32(ip->sourceIP.b32))&0x0000FFFF); //lsb
-	sum32 = sum32 + ((HTONS32(ip->targetIP.b32))>>16); // msb
-	sum32 = sum32 + ((HTONS32(ip->targetIP.b32))&0x0000FFFF); // lsb
-	
-	tmp = (sum32&0xFFFF0000)>>16;
+	tmp = (ip->ver_len)<<8 | ip->tos;
+	tmp = HTONS(tmp);
+	sum32 = tmp + ip->length;
+	sum32 = sum32 + ip->flags_offset;
+	tmp = (ip->ttl)<<8 | ip->protocol;
+	tmp = HTONS(tmp);
 	sum32 = sum32 + tmp;
+	sum32 = sum32 + ip->sourceIP.b16[0];
+	sum32 = sum32 + ip->sourceIP.b16[1];
+	sum32 = sum32 + ip->targetIP.b16[0];
+	sum32 = sum32 + ip->targetIP.b16[1];
+	//
+	//sum32 = sum32 + tmp + ip->tos;
+	//sum32 = sum32 + HTONS(ip->length);
+	//sum32 = sum32 + HTONS(ip->flags_offset);
+	//tmp = (ip->ttl)<<8;
+	//sum32 = sum32 + tmp + ip->protocol;
+	//sum32 = sum32 + ((HTONS32(ip->sourceIP.b32))>>16); // msb
+	//sum32 = sum32 + ((HTONS32(ip->sourceIP.b32))&0x0000FFFF); //lsb
+	//sum32 = sum32 + ((HTONS32(ip->targetIP.b32))>>16); // msb
+	//sum32 = sum32 + ((HTONS32(ip->targetIP.b32))&0x0000FFFF); // lsb
+	//
+	//tmp = (sum32&0xFFFF0000)>>16;
+	//sum32 = sum32 + tmp;
 	//sum32 = (sum32&0x0000FFFF) + ((sum32&0xFFFF0000)>>16); // might carry
 	//result16 = ((sum32&0x0000FFFF) + ((sum32&0xFFFF0000)>>16))&0xFFFF; // add carry
 
-	result16 = sum32&0x0000FFFF;
-	result16 = ~result16;
+	//result16 = sum32&0x0000FFFF;
+	//result16 = ~result16;
 	
-	return result16;
+	while(sum32>>16)
+	{
+		sum32 = (sum32&0xFFFF) + (sum32>>16);
+	}
+	
+	return (~sum32);
 }
