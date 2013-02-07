@@ -100,7 +100,7 @@ void	stationService()
 			}
 			else
 			{				
-				while((vsCheckDreq() != 0) && len < 384)
+				while((vsCheckDreq() != 0) && len < 1024/*384*/)
 				{
 					if ((fifoPop(dat, 32)) == 0)
 					{

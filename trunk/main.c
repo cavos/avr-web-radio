@@ -112,7 +112,7 @@ int main(void)
         wdt_reset();
 		
 		ethService();
-		stationService();
+		//stationService();
 		
 		//if (fifoLength() < station_minBuf)
 		//{
