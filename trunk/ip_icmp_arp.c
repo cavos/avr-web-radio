@@ -11,7 +11,6 @@
 #include "main.h"
 #include "types.h"
 #include "enc28j60.h"
-//#include "checksum.h"
 #include "eth.h"
 
 
@@ -116,7 +115,6 @@ UINT8	arpEntrySearch(ipAddr ipaddr)
 		ipaddr.b32 = settings.gateway.b32; // use router
 	}
 	
-	//LED_ON();
 	// look for mac in arp table
 	for(UINT8 i = 0; i < MAX_ARP_ENTRY; i++)
 	{
@@ -132,10 +130,8 @@ void	arpReply()
 {
 	if((arp->hwType == HTONS(ETH_HW_ETH)) && (arp->prType == HTONS(ETH_TYPE_IP)) && (HTONS32(arp->targetIP.b32) == settings.ipaddr.b32))
 		{
-			//LED_ON();
 			if(arp->opCode == ARP_REQUEST)
 			{
-				//LED_OFF();
 				for (UINT8 i = 0; i < 6; i++)
 				{
 					eth->dstMac.b8[i] = eth->srcMac.b8[i];
@@ -152,7 +148,6 @@ void	arpReply()
 			}
 			else if(arp->opCode == ARP_REPLY)
 			{
-				//LED_ON();
 				arpAddEntry();
 			}
 			
@@ -192,7 +187,7 @@ UINT8	arpRequest(ipAddr ipaddr)
 	arp->hwLength = 6;
 	arp->prLength = 4;
 	arp->opCode = ARP_REQUEST;
-	//LED_ON();
+
 	enc28j60_sendPacket(42, packetBuffer,0,0);
 	
 	//wait for reply
@@ -215,9 +210,6 @@ void	icmpService(/*ipAddr dstIp, UINT8 type*/)
 	UINT32 tmp;
 	if(icmp->type == ICMP_TYPE_ECHO_REQ)
 	{
-		
-		
-		//LED_ON();
 		ip->length = HTONS(ICMP_REPLY_LEN);
 		ip->protocol = IP_PR_ICMP;
 		ip->sourceIP.b32 = HTONS32(ip->sourceIP.b32);

@@ -14,37 +14,37 @@
 #define HTONS(x)	((((x)&0x00FF)<<8)+(((x)&0xFF00)>>8))
 #define HTONS32(x)	(((((x)&0xFF000000)>>24)|(((x)&0x00FF0000)>>8)|(((x)&0x0000FF00)<<8)|(((x)&0x000000FF)<<24)))
 
-#define IP_BROADCAST		0xFFFFFFFF
+#define IP_BROADCAST		(0xFFFFFFFF)
 
 #ifndef MAX_ARP_ENTRY
-#define MAX_APP_ENTRY		5
+#define MAX_APP_ENTRY		(5)
 #endif
 
 #ifndef MAX_TCP_ENTRY
-#define MAX_TCP_ENTRY		5
+#define MAX_TCP_ENTRY		(5)
 #endif
 
 #ifndef MAX_ARP_ENTRY
-#define MAX_ARP_ENTRY		5
+#define MAX_ARP_ENTRY		(5)
 #endif
 
 #ifndef TCP_TIMEOFF
-#define TCP_TIMEOFF			0xff
+#define TCP_TIMEOFF			(0xff)
 #endif
 
 #ifndef ARP_TIMEOFF
-#define ARP_TIMEOFF			0xff
+#define ARP_TIMEOFF			(0xff)
 #endif
 
 #ifndef ARP_TIMEMAX
-#define ARP_TIMEMAX			90
+#define ARP_TIMEMAX			(90)
 #endif
 
 #ifndef MTU_SIZE
-#define MTU_SIZE			1300
+#define MTU_SIZE			(1300)
 #endif
 
-// union uesd to store MAC address, can be accessed either as 8- or 16bit array
+// union used to store MAC address, can be accessed either as 8- or 16bit array
 typedef	union
 {
 	UINT8	b8[6];
@@ -354,13 +354,40 @@ extern	void	tcpMakeHeader(UINT8 index, UINT16 len);
 ///</summary>
 extern	void	udpMakeHeader(UINT8 index, UINT16 len);
 
-
+///<summary>
+/// Compute IP packet checksum
+/// returns 16 bit long checksum in network order
+///</summary>
 extern	UINT16	ipChecksum();
+
+///<summary>
+/// Compute TCP packet checksum
+/// return 16 bit long checksum in network order
+///</summary>
 extern	UINT16  tcpChecksum(UINT8 index, UINT16 datalength); // computes only tcp pseudo-header checksum
+
+///<summary>
+///not tested
+///</summary>
 extern	UINT16  udpChecksum(UINT8 index); // computes only udp pseudo-header checksum
+
+///<summary>
+///not tested
+///</summary>
 extern  UINT16	checksum(UINT8 *data, UINT16 len);
 
+///<summary>
+/// Arranges 16 bit value in network order
+/// const UINT16 val - variable to represent in network order
+/// return variable in network order
+///</summary>
 extern	UINT16	htons(const UINT16 val);
+
+///<summary>
+/// Arranges 32 bit value in network order
+/// const UINT32 val - variable to represent in network order
+/// return variable in network order
+///</summary>
 extern	UINT32	htons32(const UINT32 val);
 
 //-------------------------------------

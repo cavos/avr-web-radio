@@ -27,7 +27,7 @@ UINT16	station_hiBuf;
 
 void	stationInit()
 {
-	UINT16 tmp = fifoSize();
+	//UINT16 tmp = fifoSize();
 	
 	station_item = 0;
 	station_status = STATION_CLOSED;
@@ -60,8 +60,6 @@ UINT8	stationOpen(UINT8 item)
 	station_status = STATION_OPEN;
 	station_timeouts = STATION_RETRIES;
 	
-	//vsStart();
-	
 	r = STATION_ERROR;
 	stationProto(item, &proto);
 	if (proto == PROTO_SHOUTCAST)
@@ -92,7 +90,6 @@ void	stationService()
 		case STATION_OPENED:
 			wdt_reset();
 			station_timeouts = 0;
-			//LED_ON();
 			
 			if(fifoLength() < station_minBuf) // check buffer
 			{
@@ -100,11 +97,10 @@ void	stationService()
 			}
 			else
 			{				
-				while((vsCheckDreq() != 0) && len < 1024/*384*/)
+				while((vsCheckDreq() != 0) && len < 1536 /*384*/)
 				{
 					if ((fifoPop(dat, 32)) == 0)
 					{
-						//LED_ON();
 						break;
 					}
 					LED_OFF();
@@ -115,12 +111,6 @@ void	stationService()
 			break;
 			
 		case STATION_BUFFERING:
-		LED_OFF();
-			//(bufTMP == 0)?LED_ON():LED_OFF();
-		//
-			//fifoPut(shout_buffer, len);
-			//len = 0;
-			
 			if (fifoLength() > station_playBuf)
 			{
 				station_status = STATION_OPENED;
@@ -170,7 +160,7 @@ void	stationAddr(UINT8 item, ipAddr *ip, UINT16 *port, char *url)
 			
 			*port = 8554;
 			break;
-		case 3:
+		case SHOUTCAST_TEST:
 			strcpy_P(url, PSTR("/"));
 			ip->b8[3] = 192;
 			ip->b8[2] = 168;

@@ -4,7 +4,6 @@
 #include "enc28j60.h"
 #include "types.h"
 #include "main.h"
-//#include "enc28j60conf.h"
 
 #ifndef NULL
 #define NULL 0
