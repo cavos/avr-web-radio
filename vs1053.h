@@ -24,10 +24,6 @@
 #define VS_DEF_TEBAMP	(0)		// <-8,7>dB
 
 //patch -------------------------------
-//#define VS_PATCH_WOFLAC (2095)
-//extern	const unsigned char atab[VS_PATCH_WOFLAC];
-//const unsigned short dtab[VS_PATCH_WOFLAC];
-
 
 // op commands -------------------------------------------------------------
 #define	VS_READOP	(0x03)
@@ -186,11 +182,6 @@ UINT8	vsData(UINT8 *data);
 void	vsCancel();
 
 ///<summary>
-///	Apply patch
-///</summary>
-//void	vsPatch();
-
-///<summary>
 /// Reset vs1053
 ///</summary>
 void	vsSoftReset();
@@ -233,6 +224,27 @@ void	vsPutZeros(UINT16 count);
 ///</summary>
 void	vsSineTest(UINT8 FsS, UINT16 length);
 
-extern unsigned char peer1_1[];
+//************************************
+// Method:    vsLoadUserCodeOld
+// FullName:  Load plugin/patch to device using old method
+// Access:    public 
+// Returns:   void
+// Qualifier:
+// Parameter: UINT8 atab[] - address table
+// Parameter: UINT8 dtab[] - data table
+// Parameter: UINT32 size - size of patch/plugin
+//************************************
+void vsLoadUserCodeOld(UINT8 atab[], UINT16 dtab[], UINT32 size);
+
+//************************************
+// Method:    vsLoadPlg
+// FullName:  Load plugin/patch to device via plg format
+// Access:    public 
+// Returns:   void
+// Qualifier:
+// Parameter: UINT8 plg[] - plugin/patch in plg format
+// Parameter: UINT16 size - size of patch/plugin
+//************************************
+void	vsLoadPlg(UINT16 plg[], UINT16 size);
 
 #endif /* VS1053_H_ */

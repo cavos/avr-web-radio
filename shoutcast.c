@@ -30,8 +30,6 @@ UINT8	shoutcastOpen(UINT8 item)
 	UINT8	index, status;
 	char	tries;
 	
-	//LED_ON();
-	
 	shout_localport = SHOUTCAST_CLIENTPORT;
 	stationAddr(item, &shout_Ip, &shout_Port, shout_url);
 	shout_status = SHOUTCAST_OPEN;
@@ -138,30 +136,11 @@ void	shoutcastTcpApp(UINT8 index, UINT8 *data, UINT16 len)
 			//shoutcastData(data, len);
 			
 			shoutcastBuffer(data, len);
-			
-			//if (shout_minBuf >= fifoLength())
-			//{
-				//shout_playing = 0;
-			//}
-			//else if (shout_playBuf <= fifoLength())
-			//{
-				//shout_playing = 1;
-			//}
-			//
-			//if (shout_playing)
-			//{
-				//LED_TOGGLE();
-				//shoutcastPlay();
-			//}
-			
-			//tcpSend(index, 0); // ACK
 		break;
 		
 		case SHOUTCAST_CLOSE:
 			shout_status = SHOUTCAST_CLOSED;
 			tcpAbort(index);
-			//tcpClose(index);
-			//tcpSend(index,0);
 		break;
 		
 		case SHOUTCAST_CLOSED:
@@ -177,7 +156,6 @@ void	shoutcastData(UINT8 *data, UINT16 len)
 	bufLen = fifoLength();
 	while(len) // send data to VS1053
 	{
-		//LED_TOGGLE();
 		bufLen = fifoLength();
 		if((bufLen > 32) && (vsCheckDreq() != 0))
 		{
@@ -228,31 +206,10 @@ void	shoutcastData(UINT8 *data, UINT16 len)
 void	shoutcastBuffer(UINT8 *data, UINT16 len)
 {
 	UINT16	bufLen = 384; // send received data to buffer
-	UINT16 tmp = 0x00;
+	//UINT16 tmp = 0x00;
 	
 	while(len)
-	{
-		//shout_buffer[tmp++] = *data++;
-		//len--;
-		
-		//if (fifoFree() >= bufLen)
-		//{
-			////LED_ON();
-			//if (len > bufLen)
-			//{
-				//wdt_reset();
-				//fifoPut(data, bufLen);
-				//data += bufLen;
-				//len -= bufLen;
-			//}
-			//else if (len > 0)
-			//{
-				//wdt_reset();
-				//fifoPut(data, len);
-				//len = 0;
-			//}
-		//}
-		
+	{		
 		bufLen =  fifoPut(data, len);
 		len = len - bufLen;
 		stationService();	

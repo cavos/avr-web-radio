@@ -52,7 +52,7 @@ UINT16	mcp23kWrite(UINT16 addr, UINT8 *data, UINT16 len)
 
 UINT16	mcp23kRead(UINT16 addr, UINT8 *data, UINT16 len)
 {
-	if ((addr > MCP23K_SIZE) /*|| (mcp23kUsed() == 0)*/)
+	if ((addr > MCP23K_SIZE))
 	{
 		return 0;
 	}

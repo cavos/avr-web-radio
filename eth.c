@@ -32,7 +32,6 @@ UINT16	htons(const UINT16 val)
 void	ethService()
 {
 	UINT16 length;
-	//UINT8 l = 0;
 	
 	wdt_reset();
 	
@@ -102,7 +101,6 @@ void	ethMakeHeader(ipAddr targetIp)
 
 void	ethInit()
 {	
-	//ethArp();
 	UINT8 j;
 	
 	for (j = 0; j < MAX_TCP_ENTRY; j++)
@@ -130,7 +128,6 @@ void	ethInit()
 		UINT16	length = enc28j60_receivePacket(MTU_SIZE,packetBuffer, NULL);
 		if(length > 0)
 		{
-			//LED_ON();
 			if (eth->type == HTONS(ETH_TYPE_ARP))
 			{
 				arpReply();
@@ -158,7 +155,7 @@ void	ethTimeService()
 UINT16	ipChecksum()
 {
 	UINT32	sum32 = 0;
-	UINT16	result16 = 0;
+	//UINT16	result16 = 0;
 	UINT16	tmp = (ip->ver_len)<<8;
 	
 	tmp = (ip->ver_len)<<8 | ip->tos;

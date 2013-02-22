@@ -6,9 +6,6 @@
  */ 
 
 
-///<TODO>
-/// add interface to make it separate form mcp23k256
-///</TODO>
 #ifndef FIFO_H_
 #define FIFO_H_
 #include "mcp23k256.h"
@@ -48,6 +45,10 @@ UINT16	fifoFree(void);
 ///</summary>
 UINT16	fifoLength(void);
 
+///<summary>
+/// Get total size of fifo queue
+/// return size of fifo queue
+///</summary>
 UINT16	fifoSize();
 
 #endif /* FIFO_H_ */

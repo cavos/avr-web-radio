@@ -54,12 +54,14 @@ UINT16	mcp23kRead(UINT16 addr, UINT8 *data, UINT16 len);
 ///<summary>
 /// Computes amount of free memory
 /// retruns amount of free memory
+/// WARNING: DO NOT USE
 ///</summary>
 UINT16	mcp23kFree();
 
 ///<summary>
 /// Computes amount of memory used
 /// Returns amout of allocated memory
+/// WARNING: DO NOT USE
 ///</summary>
 UINT16	mcp23kUsed();
 

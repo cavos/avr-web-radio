@@ -29,8 +29,6 @@ volatile	UINT8	run_timeservice;
 UINT16	tmp;  
 device	settings;
 
-UINT8 dupa[536];
-
 int main(void)
 {
 	/* ports */
@@ -61,8 +59,6 @@ int main(void)
 	SPCR = (1<<SPE)|(1<<MSTR)|(1<<SPR1);
     SPSR |= (1<<SPI2X);
 	
-	//settings.gateway.b32 = 0xc0a80164; // 192.168.1.100
-	//settings.ipaddr.b32 = 0xc0a80173; // 192.168.1.115
 	settings.gateway.b8[3] = 192;
 	settings.gateway.b8[2] = 168;
 	settings.gateway.b8[1] = 10;
@@ -79,11 +75,6 @@ int main(void)
 	settings.mac.b8[5] = ENC28J60_MAC5;
 	settings.netmask.b32 = 0xFFFFFF00;
 	
-	//VS_XCS_DISABLE();
-	
-	//LED_ON();
-	//LED_OFF();
-	
 	enc28j60_init();
 	
 	mcp23kInit();
@@ -96,13 +87,7 @@ int main(void)
 	
 	vsInitialize();
 	stationInit();
-	sei();
-	
-	
-	//fifoPut(dupa, 512);
-	//fifoPut(dupa, 512);
-	//if(fifoLength() > (fifoSize()/2)){ LED_ON();}
-	
+	sei();	
 	
 /************************************************************************/
 /* main loop                                                            */
@@ -112,16 +97,8 @@ int main(void)
         wdt_reset();
 		
 		ethService();
-		//stationService();
 		
-		//if (fifoLength() < station_minBuf)
-		//{
-			//LED_ON();
-		//}
-		//if (fifoLength() > station_playBuf)
-		//{
-			//LED_OFF();
-		//}
+		stationService();
 		
 		if (BUTTON_S4 == 0) // cancel play
 		{
@@ -138,19 +115,10 @@ int main(void)
 		else if (BUTTON_S2 == 0)
 		{
 			_delay_ms(150);
-			//LED_ON();
-			fifoPut(dupa, 536);
-			//PORTA = fifoLength()&0xFF;
-			//PORTC = fifoLength()>>8;
-			//LED_OFF();
 		}
 		else if (BUTTON_S3 == 0)
 		{
 			_delay_ms(150);
-			
-			((fifoPop(dupa, 512)) == 0)?LED_ON():LED_OFF();
-			//PORTA = fifoLength()&0xFF;
-			//PORTC = fifoLength()>>8;
 		}
 	
 		if( run_timeservice )
@@ -165,7 +133,7 @@ ISR( TIMER1_COMPA_vect )
 {
 	time = time + 1;
 	run_timeservice = 0xFF;
-	//LED_TOGGLE();
+	LED_TOGGLE(); // hearth-beat
 	
 	return;
 }

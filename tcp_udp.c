@@ -30,13 +30,11 @@ UINT8		udpDoChecksum = UDP_CHECKSUM_ON;
 
 void	tcpClose(UINT8 index)
 {
-	//udpDbgSend(PSTR("TCP->Close"), 10);
 	tcpTable[index].status = TCP_S_CLOSE;
 }
 
 void	tcpAbort(UINT8 index)
 {
-	//udpDbgSend(PSTR("TCP->Abort"), 10);
 	tcpTable[index].status = TCP_S_ABORT;
 }
 
@@ -77,7 +75,6 @@ UINT8	tcpConnect(ipAddr targetIp, UINT16 dstPort, UINT16 srcPort, UINT16 window)
 	tcpTable[i].window = window;
 	
 	tcpSend(i, 0);
-	//udpDbgSend(PSTR("TCP->Conn"), 9);
 	
 	return j;
 }
@@ -94,7 +91,6 @@ void	tcpSend(UINT8 index, UINT16 len)
 void	tcpService()
 {
 	UINT8 i;
-	//UINT16 len = 0;
 	
 	for (i = 0; i < MAX_TCP_ENTRY; i++)
 	{
@@ -163,7 +159,6 @@ void	tcpSOpen(UINT8 index) // syn & ack
 	if ( (tcp->flags&TCP_FLAG_FIN) || (tcp->flags&TCP_FLAG_RST))
 	{
 		tcpTable[index].status = TCP_S_CLOSED;
-		//udpDbgSend(PSTR("TCP->FIN|RST->CLOSE"),19);
 	} 
 	else if ( (tcp->flags&TCP_FLAG_SYN) && (tcp->flags&TCP_FLAG_ACK))
 	{
@@ -174,12 +169,11 @@ void	tcpSOpen(UINT8 index) // syn & ack
 		tcpTable[index].flags = TCP_FLAG_ACK;
 		tcpTable[index].status = TCP_S_OPENED;
 		
+		// add tcp handlers here
 		switch(HTONS(tcp->srcPort))
 		{
-			case SHOUTCAST_SERVERPORT:
-			//LED_OFF();
-				shoutcastTcpApp(index, &packetBuffer[TCP_DATA], len-TCP_HEADER_SIZE);
-				//tcpSend(index, 0);
+			case SHOUTCAST_SERVERPORT: // selected port
+				shoutcastTcpApp(index, &packetBuffer[TCP_DATA], len-TCP_HEADER_SIZE); // application handler
 			break;
 		}
 	}
@@ -344,8 +338,6 @@ UINT16	tcpChecksum(UINT8 index, UINT16 datalength)
 	UINT32 sum = 0;
 	UINT8 *data = &packetBuffer[TCP_OFFSET];
 	UINT16 len = HTONS(ip->length) - IP_HEADER_SIZE;
-	//LED_OFF();
-
 	sum = sum + HTONS(settings.ipaddr.b16[0]);
 	sum = sum + HTONS(settings.ipaddr.b16[1]);
 	sum = sum + HTONS(tcpTable[index].ip.b16[0]);
@@ -359,7 +351,6 @@ UINT16	tcpChecksum(UINT8 index, UINT16 datalength)
 		if (sum & 0x80000000)
 		{
 			sum = (sum&0xFFFF)+(sum>>16);
-			//LED_ON();
 		}			
 		data += 2; // move pointer
 	}
@@ -375,25 +366,6 @@ UINT16	tcpChecksum(UINT8 index, UINT16 datalength)
 	}
 	
 	return ~sum;
-	
-	//UINT32 sum = 0;
-	//
-	//// pseudo header
-	//sum = sum + HTONS(settings.ipaddr.b16[0]);
-	//sum = sum + HTONS(settings.ipaddr.b16[1]);
-	//sum = sum + tcpTable[index].ip.b16[0];
-	//sum = sum + tcpTable[index].ip.b16[1];
-	//sum = sum + HTONS(datalength+TCP_HEADER_SIZE);
-	//sum = sum + HTONS(IP_PR_TCP);
-	//
-	//sum += checksum(&packetBuffer[TCP_OFFSET], datalength+TCP_HEADER_SIZE);
-	//
-	//while(sum>>16)
-	//{
-		//sum = (sum&0xFFFF)+(sum>>16);
-	//}
-	//
-	//return sum;
 }
 
 UINT16 udpChecksum(UINT8 index)
@@ -469,31 +441,10 @@ void	tcpMakeHeader(UINT8 index, UINT16 len)
 	tcp->length = TCP_HEADER_SIZE<<2;
 	tcp->flags = tcpTable[index].flags;
 	
-	//UINT16 f;
-	//f= fifoFree();
-	//
-	//if (f > 4096)
-	//{
-		//tcp->window = HTONS(2048);
-	//}
-	//else if (f > 2048)
-	//{
-		//tcp->window = HTONS(1024);
-	//}
-	//else if (f > 512)
-	//{
-		//tcp->window = HTONS(512);
-	//}
-	//else
-	//{
-		//tcp->window = HTONS(256);
-	//}
-	
 	tcp->window = tcpTable[index].window;
 	tcp->checksum = 0;
 	tcp->urgentPtr = 0;
 	
-	//tcp->checksum = tcpChecksum((UINT8*)tcp, TCP_HEADER_SIZE+len, tcpTable[index].ip);
 	tcp->checksum = tcpChecksum(index, len);
 }
 
